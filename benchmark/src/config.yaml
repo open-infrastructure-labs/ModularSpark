@@ -28,7 +28,7 @@
     - spark.driver.maxResultSize=2g
     - spark.driver.memory=2g
     - spark.executor.memory=2g
-    - spark.sql.execution.arrow.enabled=true
+    - spark.sql.execution.arrow.pyspark.enabled=true
     - spark.sql.catalogImplementation=hive
 #    - spark.eventLog.enabled=true
 #    - spark.eventLog.dir=/qflock/spark/build/spark-logs
