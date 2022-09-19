@@ -9,10 +9,6 @@ pushd spark
 ./stop.sh
 popd
 
-# pushd jdbc
-# ./stop.sh
-# popd
-
-pushd spark/extensions/server
-./stop.sh
-popd
+#pushd spark/extensions/server
+#./stop.sh
+#popd

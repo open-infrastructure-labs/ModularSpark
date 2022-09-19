@@ -4,9 +4,9 @@ pushd "$(dirname "$0")" # connect to root
 ROOT_DIR=$(pwd)
 echo "ROOT_DIR ${ROOT_DIR}"
 
-pushd tpch-dbgen
-make
-popd
+#pushd tpch-dbgen
+#make
+#popd
 
 pushd tpcds-kit/tools
 make
