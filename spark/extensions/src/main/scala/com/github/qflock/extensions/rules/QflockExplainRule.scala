@@ -22,7 +22,6 @@ import scala.annotation.tailrec
 import scala.util.{Either, Left => EitherLeft, Right => EitherRight}
 
 import com.github.qflock.extensions.common.PushdownSqlStatus
-import com.github.qflock.extensions.jdbc.QflockJdbcScan
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.spark.sql.SparkSession
@@ -112,8 +111,6 @@ case class QflockExplainRule(spark: SparkSession) extends Rule[LogicalPlan] {
   }
   private def needsRule(child: Any): Boolean = {
     child match {
-      case DataSourceV2ScanRelation(_, scan, _, _) =>
-        !scan.isInstanceOf[QflockJdbcScan]
       case qlr@QflockLogicalRelation(relation, _, _, _) =>
         relation match {
           // If we injected it just for size estimates, allow it to continue.

@@ -14,12 +14,7 @@ fi
 
 SPARK_JAR_DIR=../build/spark-${SPARK_VERSION}/jars/
 if [ ! -d $SPARK_JAR_DIR ]; then
-  echo "Please build spark before building extensions"
-  exit 1
-fi
-JDBC_JAR_DIR=$ROOT_DIR/jdbc/driver/target/
-if [ ! -d $JDBC_JAR_DIR ]; then
-  echo "Please build jdbc driver ($JDBC_JAR_DIR) before building extensions"
+  echo "Please build spark ($SPARK_JAR_DIR) before building extensions"
   exit 1
 fi
 if [ ! -d ./lib ]; then
@@ -30,8 +25,6 @@ if [ ! -d build ]; then
 fi
 echo "Copy over spark jars ($SPARK_JAR_DIR)"
 cp $SPARK_JAR_DIR/*.jar ./lib
-echo "Copy over jdbc jars ($JDBC_JAR_DIR)"
-cp $JDBC_JAR_DIR/*.jar ./lib
 
 if [ "$#" -gt 0 ]; then
   if [ "$1" == "-d" ]; then

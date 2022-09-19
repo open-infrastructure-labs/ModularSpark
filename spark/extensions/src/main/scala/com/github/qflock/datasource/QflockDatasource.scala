@@ -18,7 +18,6 @@ package com.github.qflock.datasource
 
 import java.util
 
-import com.github.qflock.extensions.jdbc.QflockJdbcDatasource
 import org.slf4j.LoggerFactory
 
 import org.apache.spark.sql.connector.catalog.{SessionConfigSupport, Table, TableProvider}
@@ -47,7 +46,7 @@ class QflockDatasource extends TableProvider
 
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
     if (options.get("format") == "parquet") {
-      QflockJdbcDatasource.getSchema(options)
+      QflockDatasource.getSchema(options)
     } else {
       /* Other types like CSV require a user-supplied schema */
       throw new IllegalArgumentException("requires a user-supplied schema")
@@ -68,3 +67,27 @@ class QflockDatasource extends TableProvider
   override def shortName(): String = "qflockDs"
 }
 
+object QflockDatasource {
+  var initialized = false
+
+  def getSchema(options: util.Map[String, String]): StructType = {
+    if (options.getOrDefault("schema", "") != "") {
+      StructType(options.get("schema").split(",").map(x => {
+        val items = x.split(":")
+        val dataType = items(1) match {
+          case "string" => StringType
+          case "integer" => IntegerType
+          case "double" => DoubleType
+          case "long" => LongType
+        }
+        val nullable = items(2) match {
+          case "false" => false
+          case _ => true
+        }
+        StructField(items(0), dataType, nullable)
+      }))
+    } else {
+      new StructType()
+    }
+  }
+}
