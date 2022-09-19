@@ -1,0 +1,5 @@
+volume/
+.sbtopts
+/build
+/docker/spark-*.tgz
+/docker/hadoop-*tar.gz

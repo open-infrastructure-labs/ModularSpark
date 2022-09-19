@@ -15,16 +15,9 @@
 #    limit-rows: "1000"
     query-extension: "sql"
     query-exceptions: "2,5,43,59,13,48,24a,24b,23a,23b,14a,14b,57"
-#    jdbc-path: "jdbc:hive2://qflock-dc2-spark:10001/tpcds;transportMode=http;httpPath=cliservice"
-#    jdbc-path: "jdbc:hive2://qflock-dc2-spark:10000/tpcds;transportMode=binary;httpPath=cliservice"
-# Below is for debug with jdbc server.
-#    jdbc-path: "jdbc:qflock://local-docker-host:1433/tpcds"
-#    jdbc-path: "jdbc:qflock://qflock-jdbc-dc2:1433/tpcds"
     server-path: "http://qflock-spark-dc2:9860/query"
 #    docker-stats: ""
-    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth1,\
-                   qflock-storage-dc2:tx_bytes:eth0,qflock-storage-dc2:tx_bytes:eth1,\
-                   qflock-spark-dc2:tx_bytes:eth0,qflock-spark-dc2:tx_bytes:eth1"
+    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth1"
 #    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,\
 #                   qflock-jdbc-dc2:tx_bytes:eth1"
   spark:
@@ -67,5 +60,4 @@
 #    - org.apache.spark:spark-hive_2.12:3.2.1
     jars:
     - /extensions/target/scala-2.12/qflock-extensions_2.12-0.1.0.jar
-    - /qflock/jdbc/driver/target/thrift-jdbc-server-0.0.4-SNAPSHOT.jar
 
