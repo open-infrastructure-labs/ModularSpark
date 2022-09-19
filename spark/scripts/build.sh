@@ -21,7 +21,7 @@ fi
 
 echo "Building spark"
 rm $SPARK_SRC/spark-*SNAPSHOT*.tgz || true
-./dev/make-distribution.sh --name custom-spark --pip --tgz -Phive
+# ./dev/make-distribution.sh --name custom-spark --pip --tgz -Phive
 # Install Spark.
 # Extract our built package into our install directory.
 echo "Extracting $SPARK_PACKAGE.tgz -> $SPARK_HOME"
