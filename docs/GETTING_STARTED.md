@@ -14,6 +14,10 @@ git submodule update --recursive --progress
 ```shell
 ./build.sh
 ```
+# One time Initialization.
+```shell
+./init.sh
+```
 # start
 ```shell
 ./start.sh
@@ -35,4 +39,9 @@ cleans out build artifacts and all other artifacts including dockers and downloa
 # clean all but skip docker removal
 ```shell
 NO_CLEAN_DOCKERS=1 ./clean_all.sh
+```
+# Run query
+```shell
+cd benchmark/src
+./docker-bench.py --queries 1
 ```
