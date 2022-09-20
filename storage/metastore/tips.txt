@@ -1,0 +1,43 @@
+
+https://github.com/Thriftpy/thriftpy2
+
+./sbin/start-thriftserver.sh --master local \
+--conf "spark.sql.catalogImplementation=hive"  \
+--conf "spark.sql.hive.metastore.version=3.1.2"  \
+--conf "spark.sql.hive.metastore.jars=path"  \
+--conf "spark.sql.hive.metastore.jars.path=jars/*.jar"  \
+--conf "spark.sql.warehouse.dir=hdfs://qflock-storage:9000/user/hive/warehouse3"  \
+--conf "spark.sql.cbo.enabled=true"  \
+--conf "spark.sql.cbo.planStats.enabled=true"  \
+--conf "spark.sql.statistics.histogram.enabled=true"  \
+--packages org.apache.spark:spark-hive_2.12:3.2.1
+
+
+./bin/beeline
+
+!connect jdbc:hive2://localhost:10001/;transportMode=http;httpPath=cliservice -n peter
+
+show databases;
+create database testdb;
+show databases;
+
+
+benchmark/src/docker-bench.py --compute_stats
+
+benchmark/src/docker-bench.py --query_text "select ss_list_price from store_sales where ss_list_price < 100" --explain
+
+
+# NameNode stats
+http://172.18.0.2:9870/jmx
+
+# "Hadoop:service=NameNode,name=RpcDetailedActivityForPort9000"
+# Hadoop:service=NameNode,name=RpcActivityForPort9000
+
+# Datanode Stats
+http://172.18.0.2:9864/jmx
+http://172.18.0.2:9864/jmx?qry=Hadoop:service=DataNode,name=DataNodeActivity-qflock-storage-dc1-9866
+
+benchmark/src/docker-bench.py --query_text "select cs_sold_date_sk from catalog_sales"
+"BytesRead" : 553347,
+"BytesRead" : 624403,
+624403 - 553347

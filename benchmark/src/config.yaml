@@ -1,0 +1,63 @@
+---
+  debug: false
+  benchmark:
+    name: TPC-DS
+    db-name: tpcds
+    docker-name: qflock-spark-app
+    tool-path: "../tpcds-kit/tools"
+    tool-commandline: "./dsdgen -scale 1 -RNGSEED 42"
+    file-extension: "dat"
+    raw-data-path: "../data/tpcds-data"
+    parquet-path: "hdfs://qflock-storage-dc1:9000/tpcds-parquet"
+#    parquet-path: "/qflock/benchmark/data/tpcds-parquet"
+    # parquet-path: "webhdfs://qflock-storage:9870/tpcds-parquet"
+    query-path: "queries/tpcds"
+#    limit-rows: "1000"
+    query-extension: "sql"
+    query-exceptions: "2,5,43,59,13,48,24a,24b,23a,23b,14a,14b,57"
+    server-path: "http://qflock-spark-dc2:9860/query"
+#    docker-stats: ""
+    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth1"
+#    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,\
+#                   qflock-jdbc-dc2:tx_bytes:eth1"
+  spark:
+    master: local[1]
+    hive-metastore: "qflock-storage-dc1"
+    hive-metastore-ports: "default:9084"
+    conf:
+    - spark.driver.maxResultSize=2g
+    - spark.driver.memory=2g
+    - spark.executor.memory=2g
+    - spark.sql.execution.arrow.pyspark.enabled=true
+    - spark.sql.catalogImplementation=hive
+#    - spark.eventLog.enabled=true
+#    - spark.eventLog.dir=/qflock/spark/build/spark-logs
+#    - spark.sql.sources.useV1SourceList=
+#    - spark.sql.exchange.reuse=false
+#    - spark.sql.adaptive.enabled=false
+#    - spark.sql.parquet.enableVectorizedReader=false
+#    - spark.sql.autoBroadcastJoinThreshold=-1
+#    - spark.sql.hive.metastore.version=3.1.2
+#    - spark.sql.hive.metastore.jars=path
+#    - spark.sql.hive.metastore.jars.path=jars/*.jar
+    - spark.sql.warehouse.dir=hdfs://qflock-storage-dc1:9000/user/hive/warehouse3
+    # The below write out with 16 Mb row groups.
+    - spark.hadoop.dfs.blocksize=16777216
+    - spark.hadoop.parquet.block.size=16777216
+#    - spark.sql.extensions=com.github.qflock.extensions.rules.QflockExtensions
+    - spark.sql.cbo.enabled=true
+    - spark.sql.statistics.histogram.enabled=true
+#    - spark.sql.statistics.histogram.numBins=4096
+#    - spark.sql.cbo.planStats.enabled=true
+#    - spark.sql.cbo.joinReorder.enabled=true
+#    - spark.sql.optimizer.excludedRules=org.apache.spark.sql.catalyst.optimizer.CostBasedJoinReorder
+#    - 'spark.driver.extraJavaOptions=-classpath /conf/:/opt/spark-3.3.0/jars/*: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=192.168.48.3:5006'
+    # - 'spark.driver.extraJavaOptions=-Dlog4j.debug=true:-Dlog4j.configuration=file:/qflock/conf/spark/log4j.properties'
+ #   - 'spark.executor.extraJavaOptions=-Dlog4j.debug=true:-Dlog4j.configuration=file:/qflock/conf/spark/log4j.properties'
+    packages:
+    - javax.json:javax.json-api:1.1.4
+    - org.glassfish:javax.json:1.1.4
+#    - org.apache.spark:spark-hive_2.12:3.2.1
+    jars:
+    - /extensions/target/scala-2.12/qflock-extensions_2.12-0.1.0.jar
+
