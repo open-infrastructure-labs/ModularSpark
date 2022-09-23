@@ -4,6 +4,7 @@ pushd "$(dirname "$0")"
 ROOT_DIR=$(git rev-parse --show-toplevel)
 SPARK_DIR=$ROOT_DIR/spark
 SCRIPTS_DIR=$ROOT_DIR/scripts
+source $ROOT_DIR/version
 source $ROOT_DIR/scripts/spark/spark_version
 echo "build_spark.sh: SPARK_VERSION $SPARK_VERSION"
 
@@ -21,7 +22,7 @@ if [[ "$1" == "-d" ]]; then
   shift
 
   docker run --rm -it --name $DOCKER_NAME \
-  --network qflock-net-dc1 \
+  --network ${BASE_NETWORK_NAME} \
   --mount type=bind,source=$ROOT_DIR,target=/qflock \
   --mount type=bind,source=$SPARK_DIR/spark,target=/spark \
   --mount type=bind,source=$SPARK_DIR/extensions/,target=/extensions \
@@ -39,7 +40,7 @@ else
   echo "Starting build for $@"
 
   docker run --rm -it --name spark_build \
-  --network qflock-net-dc1 \
+  --network ${BASE_NETWORK_NAME} \
   --mount type=bind,source=$ROOT_DIR,target=/qflock \
   --mount type=bind,source=$SPARK_DIR/spark,target=/spark \
   --mount type=bind,source=$SPARK_DIR/extensions/,target=/extensions \
