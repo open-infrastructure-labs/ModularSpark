@@ -105,11 +105,11 @@ class SparkHelper:
 
     def init_extensions(self, rule):
         self.load_rule(rule)
-        print("init QflockFileCachedData")
-        from py4j.java_gateway import java_import
-        gw = self._spark.sparkContext._gateway
-        java_import(gw.jvm, "com.github.qflock.extensions.common.QflockFileCachedData")
-        gw.jvm.com.github.qflock.extensions.common.QflockFileCachedData.init()
+        # print("init QflockFileCachedData")
+        # from py4j.java_gateway import java_import
+        # gw = self._spark.sparkContext._gateway
+        # java_import(gw.jvm, "com.github.qflock.extensions.common.QflockFileCachedData")
+        # gw.jvm.com.github.qflock.extensions.common.QflockFileCachedData.init()
 
     def load_rule(self, ext):
         from py4j.java_gateway import java_import

@@ -13,6 +13,10 @@ popd
 
 scripts/build_spark.sh
 
+pushd spark_changes
+./build.sh
+popd
+
 pushd extensions
 ./build.sh
 popd
