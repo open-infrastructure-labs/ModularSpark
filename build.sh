@@ -1,9 +1,11 @@
 #!/bin/bash
 set -e
-# Check if qflock network exists
-if ! docker network ls | grep qflock-net; then
-  docker network create qflock-net
-fi
+pushd "$(dirname "$0")" # connect to root
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Initialize network configuration
+${ROOT_DIR}/scripts/init_networks.sh
+
 
 pushd storage/docker
 ./build.sh
