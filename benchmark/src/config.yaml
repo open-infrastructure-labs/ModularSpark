@@ -52,8 +52,13 @@
 #    - spark.sql.cbo.joinReorder.enabled=true
 #    - spark.sql.optimizer.excludedRules=org.apache.spark.sql.catalyst.optimizer.CostBasedJoinReorder
 #    - 'spark.driver.extraJavaOptions=-classpath /conf/:/opt/spark-3.3.0/jars/*: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=192.168.48.3:5006'
-    # - 'spark.driver.extraJavaOptions=-Dlog4j.debug=true:-Dlog4j.configuration=file:/qflock/conf/spark/log4j.properties'
- #   - 'spark.executor.extraJavaOptions=-Dlog4j.debug=true:-Dlog4j.configuration=file:/qflock/conf/spark/log4j.properties'
+#    - 'spark.driver.extraJavaOptions=-Dlog4j.debug=true:-Dlog4j.configuration=file:/qflock/conf/spark/log4j.properties'
+#    - 'spark.driver.extraJavaOptions=-verbose:class -Djava.ext.dirs=/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext:/usr/java/packages/lib/ext:/qflock/spark/spark_changes/target/scala-2.12 -Djava.system.class.loader=com.github.modularspark.ModSparkLoader -classpath /build/spark-3.3.0/jars/* '
+#    - 'spark.driver.extraJavaOptions=-verbose:class -classpath /build/spark-3.3.0/jars/*:/qflock/spark/spark_changes/target/scala-2.12/* -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=172.19.0.3:5006'
+    # non-debug mode extraJavaOptions
+    - 'spark.driver.extraJavaOptions=-classpath /qflock/spark/spark_changes/target/scala-2.12/*:/build/spark-3.3.0/jars/*'
+    # debug mode extraJavaOptions
+    - 'spark.driver.extraJavaOptions=-classpath /qflock/spark/spark_changes/target/scala-2.12/*:/build/spark-3.3.0/jars/* -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=172.19.0.3:5006'
     packages:
     - javax.json:javax.json-api:1.1.4
     - org.glassfish:javax.json:1.1.4

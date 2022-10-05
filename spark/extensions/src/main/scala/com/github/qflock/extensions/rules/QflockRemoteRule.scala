@@ -23,7 +23,7 @@ import scala.collection.mutable
 import scala.util.{Either, Left => EitherLeft, Right => EitherRight}
 
 import com.github.qflock.extensions.common.{PushdownSQL, PushdownSqlStatus, QflockQueryCache}
-import com.github.qflock.extensions.jdbc.{QflockDataSourceV2ScanRelation, QflockLog}
+import com.github.qflock.extensions.jdbc.QflockLog
 import com.github.qflock.extensions.remote.QflockRemoteScan
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -233,16 +233,16 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     if (relationArgs.catalogTable.isEmpty) {
       return false
     }
-    val catalogTable = relationArgs.catalogTable.get
-    val tableName = catalogTable.identifier.table
-    val dbName = catalogTable.identifier.database.getOrElse("")
-    val table = ExtHiveUtils.getTable(dbName, tableName)
+//    val catalogTable = relationArgs.catalogTable.get
+//    val tableName = catalogTable.identifier.table
+//    val dbName = catalogTable.identifier.database.getOrElse("")
+//    val table = ExtHiveUtils.getTable(dbName, tableName)
 
     // We only continue with the rule if this table is stored remotely.
     // In the future we could parameterize this
-    if (!table.getSd.getLocation.contains("-dc2")) {
-      return false
-    }
+//    if (!table.getSd.getLocation.contains("-dc2")) {
+//      return false
+//    }
     //    if (relationArgs.dataSchema == relationArgs.readSchema) {
     //      logger.warn("Plan not modified. No Project Necessary. " +
     //        relationArgs.options.get("currenttest"))
@@ -430,9 +430,9 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
       Some(statsParameters),
       relationForStats.toPlanStats(relationArgs.catalogTable.get.stats.get))
     val ndpRel = getNdpRelation(path, schemaStr)
-    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references,
-      None, relationArgs.catalogTable.get)
-//    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
+//    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references,
+//      None, relationArgs.catalogTable.get)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
     val withFilter = {
       if (filtersStatus == PushdownSqlStatus.FullyValid) {
         /* Clip the filter from the DAG, since we are going to
@@ -589,9 +589,10 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
       Some(statsParameters),
       relationForStats.toPlanStats)
     val ndpRel = getNdpRelation(opt.get("path"), opt.get("schema"))
-    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject,
-      references,
-      None, relationArgs.catalogTable.get)
+//    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject,
+//      references,
+//      None, relationArgs.catalogTable.get)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
     scanRelation
   }
   private def pushFilterProject(plan: LogicalPlan): LogicalPlan = {
@@ -1005,9 +1006,10 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
       Some(statsParameters),
       relationStats)
     val ndpRel = getNdpRelation(opt.get("path"), schemaStr)
-    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject,
-      references, None,
-      relationArgsLeft.catalogTable.get)
+//    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject,
+//      references, None,
+//      relationArgsLeft.catalogTable.get)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
     scanRelation
   }
 
@@ -1055,11 +1057,11 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     }
   }
   def checkJoin(plan: LogicalPlan): LogicalPlan = {
-    val queryName = spark.conf.get("qflockQueryName")
+//    val queryName = spark.conf.get("qflockQueryName")
     plan.transform {
       case j@Join(left, right, joinType, condition, joinHint) =>
-        val (lValid, lTable) = checkJoinChild(left)
-        val (rValid, rTable) = checkJoinChild(right)
+//        val (lValid, lTable) = checkJoinChild(left)
+//        val (rValid, rTable) = checkJoinChild(right)
 //        if (rValid && lValid) {
 //          QflockLog.log(s"queryName:$queryName joinStatus:valid " +
 //                        s"tables:${rTable.get},${lTable.get} " +
@@ -1101,8 +1103,7 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
      relationArgsRight.get.options.get("rulelog").contains("hasfilters")
   }
 
-  def joinValid(join: LogicalPlan,
-                left: LogicalPlan, right: LogicalPlan, joinType: JoinType,
+  def joinValid(left: LogicalPlan, right: LogicalPlan, joinType: JoinType,
                 condition: Option[Expression]): Boolean = {
     val (lValid, _) = checkJoinChild(left)
     val (rValid, _) = checkJoinChild(right)
@@ -1117,7 +1118,7 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
   def pushJoin(plan: LogicalPlan): LogicalPlan = {
     plan.transform {
       case j@Join(left, right, joinType, condition, _)
-        if joinValid(j, left, right, joinType, condition) =>
+        if joinValid(left, right, joinType, condition) =>
         // Enable the below line to generate join stats logs.
         // checkJoin(plan)
         transformJoin(j, left, right, joinType, condition)
@@ -1125,8 +1126,8 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
   }
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
   def apply(inputPlan: LogicalPlan): LogicalPlan = {
-    val after = pushJoin(pushAggregate(pushFilterProject(inputPlan)))
-//    val after = pushAggregate(pushFilterProject(inputPlan))
+//    val after = pushJoin(pushAggregate(pushFilterProject(inputPlan)))
+    val after = pushAggregate(pushFilterProject(inputPlan))
 //    val after = pushFilterProject(inputPlan)
     after
   }

@@ -16,6 +16,7 @@
  */
 package com.github.qflock.extensions.remote
 
+
 import java.util
 import java.util.OptionalLong
 
@@ -23,8 +24,10 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.slf4j.LoggerFactory
 
+import org.apache.spark.sql.catalyst.expressions.AttributeMap
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.connector.read.{Batch, InputPartition, PartitionReaderFactory, Scan, Statistics => ReadStats, SupportsReportStatistics}
+import org.apache.spark.sql.execution.datasources.v2.ReadStatsWithAttributes
 import org.apache.spark.sql.types._
 
 
@@ -48,12 +51,11 @@ case class QflockRemoteScan(schema: StructType,
   private val rowCount: OptionalLong =
     OptionalLong.of(stats.rowCount.getOrElse(BigInt(0)).longValue())
 
-  case class GenericPushdownStats(sizeInBytes: OptionalLong,
-                                  numRows: OptionalLong) extends ReadStats
-
   override def estimateStatistics(): ReadStats = {
     // schema.defaultSize
-    GenericPushdownStats(numRows = rowCount, sizeInBytes = sizeInBytes)
+    ReadStatsWithAttributes(numRows = rowCount,
+                            sizeInBytes = sizeInBytes,
+                            attributeStats = stats.attributeStats)
   }
   private def createPartitions(): Array[InputPartition] = {
     val tableName = options.get("tablename")

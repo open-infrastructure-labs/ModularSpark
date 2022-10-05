@@ -24,7 +24,16 @@ class SparkLauncher:
         self._metastore_ports = Config.get_metadata_ports(self._config)
 
     def filter_config(self, conf):
+        # "agentlib" is for extraJavaOptions when we are debugging, so disallow it
+        # if we are not debugging
         if "agentlib" in conf and ("debug" not in self._args or not self._args.debug):
+            print(f"agentlib and not debugging {conf}")
+            return False
+        elif "extraJavaOptions" in conf and "agentlib" not in conf and \
+                (self._args.debug or self._args.debug):
+            # extraJavaOptions with no agentlib is for non-debug
+            # mode, so disallow if debugging
+            print(f"javaOptions and debugging {self._args.debug} {conf}")
             return False
         else:
             return True
