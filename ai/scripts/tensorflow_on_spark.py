@@ -36,7 +36,7 @@ def train():
         )
         return model
 
-    model_path = '/tmp/keras-model-2'
+    model_path = '/tmp/keras-model'
 
     def _is_chief(task_type, task_id):
         # Note: there are two possible `TF_CONFIG` configurations.
@@ -68,22 +68,24 @@ def train():
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     train_datasets = train_datasets.with_options(options)
     multi_worker_model = build_and_compile_cnn_model()
+
     task_id = multi_worker_model.distribute_strategy.cluster_resolver.task_id
     task_type = multi_worker_model.distribute_strategy.cluster_resolver.task_type
-    print(f"Start Fit {task_type} {task_id}")
+    print(f"Start Fit task_type: {task_type} task_id: {task_id}")
     multi_worker_model.fit(x=train_datasets, epochs=3, steps_per_epoch=5)
-    print(f"Done {task_type} {task_id}")
-    if task_id == None or (task_type == "worker" and task_id == 0):
-        # Only save on chief worker.
-        print(f"Saving Model for: {task_type} {task_id}")
-        write_model_path = write_filepath(model_path, task_type, task_id)
-        multi_worker_model.save(write_model_path, overwrite=True)
-        print(f"Saving Model Complete for: {task_type} {task_id}")
+    print(f"Done task_type: {task_type} task_id: {task_id}")
 
-spark = SparkSession.builder.getOrCreate()
-sc = spark.sparkContext
-sc.setLogLevel("INFO")
-print("Starting Training")
-model = MirroredStrategyRunner(num_slots=1, use_gpu=False, local_mode=True).run(train)
-print("Done training")
+    # Always save the model to keep all the workers in sync.
+    write_model_path = write_filepath(model_path, task_type, task_id)
+    print(f"Saving Model for: task_type: {task_type} task_id: {task_id} path: {write_model_path}")
+    multi_worker_model.save(write_model_path, overwrite=True)
+    print(f"Saving Model Complete for: task_type: {task_type} task_id: {task_id}")
+
+if __name__ == "__main__":
+    #spark = SparkSession.builder.getOrCreate()
+    #sc = spark.sparkContext
+    #sc.setLogLevel("INFO")
+    print("Starting Training")
+    model = MirroredStrategyRunner(num_slots=2, use_gpu=False, local_mode=False).run(train)
+    print("Done training")
 
