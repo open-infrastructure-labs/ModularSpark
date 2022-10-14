@@ -83,17 +83,13 @@ def train_and_eval():
     model.fit(train_dataset, epochs=50, verbose=1)
     print(f'start evaluting {task_type} {task_id}')
     model.evaluate(test_dataset)
-
     print(f'done {task_type} {task_id}')
-    if task_id==None or (task_type=='worker' and task_id==0):
-        print(f'saving model for {task_type} {task_id}')
-        write_model_path = write_filepath(model_path, task_type, task_id)
-        model.save(write_model_path, overwrite=True)
-        print(f'saving model compute for {task_type} {task_id}')
 
-spark = SparkSession.builder.getOrCreate()
-sc = spark.sparkContext
-sc.setLogLevel('INFO')
+    print(f'saving model for {task_type} {task_id}')
+    write_model_path = write_filepath(model_path, task_type, task_id)
+    model.save(write_model_path, overwrite=True)
+    print(f'saving model compute for {task_type} {task_id}')
+
 print('starting training and evaluating')
-iot_model = MirroredStrategyRunner(num_slots=1, use_gpu=False, local_mode=True).run(train_and_eval)
+iot_model = MirroredStrategyRunner(num_slots=8, use_gpu=False, local_mode=False).run(train_and_eval)
 print('done training and evaluating')
