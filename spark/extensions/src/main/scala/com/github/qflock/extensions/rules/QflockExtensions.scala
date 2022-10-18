@@ -18,6 +18,7 @@ package com.github.qflock.extensions.rules
 
 import java.io.FileWriter
 
+import com.github.qflock.extensions.rules.parse.QflockSqlParser
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
@@ -62,6 +63,9 @@ object QflockBasicRuleBuilder {
 class QflockBasicRuleExtensions extends (SparkSessionExtensions => Unit) {
   def apply(e: SparkSessionExtensions): Unit = {
     e.injectOptimizerRule(QflockBasicRule)
+    e.injectParser { (session, parser) =>
+      new QflockSqlParser(parser)
+    }
   }
 }
 
