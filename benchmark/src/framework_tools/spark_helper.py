@@ -126,6 +126,10 @@ class SparkHelper:
             print("Loading remote rule")
             java_import(gw.jvm, "com.github.qflock.extensions.rules.QflockRemoteRuleBuilder")
             gw.jvm.com.github.qflock.extensions.rules.QflockRemoteRuleBuilder.injectExtraOptimization()
+        elif ext == "basic":
+            print("Loading basic rule")
+            java_import(gw.jvm, "com.github.qflock.extensions.rules.QflockBasicRuleBuilder")
+            gw.jvm.com.github.qflock.extensions.rules.QflockBasicRuleBuilder.injectExtraOptimization()
 
     def create_table_view(self, table, db_path, db_name):
         if self._jdbc:

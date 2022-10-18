@@ -22,6 +22,7 @@ scalaVersion := "2.12.10"
 publishTo := Some(Resolver.file("file",  new File( "/build/releases" )) )
 enablePlugins(JavaServerAppPackaging, UniversalDeployPlugin)
 enablePlugins(LinuxPlugin)
+enablePlugins(Antlr4Plugin)
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 // We want to execute the tests serially.
@@ -51,6 +52,12 @@ libraryDependencies ++= Seq(
   "org.glassfish" % "javax.json" % "1.1.4",
   "com.github.luben" % "zstd-jni" % "1.5.0-4",
 )
+
+antlr4GenListener in Antlr4 := true
+antlr4GenVisitor in Antlr4 := true
+antlr4Version in Antlr4 := "4.8-1"
+antlr4PackageName in Antlr4 := Some("com.github.qflock.parser")
+
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 
 // scalastyle >= 0.9.0
