@@ -14,11 +14,11 @@
  * This file is an adaptation of Presto's presto-parser/src/main/antlr4/com/facebook/presto/sql/parser/SqlBase.g4 grammar.
  */
 
-grammar QflockSqlBase;
+lexer grammar SqlBaseLexer;
 
 @members {
   /**
-   * When true, parser should throw ParseException for unclosed bracketed comment.
+   * When true, parser should throw ParseExcetion for unclosed bracketed comment.
    */
   public boolean has_unclosed_bracketed_comment = false;
 
@@ -70,74 +70,6 @@ grammar QflockSqlBase;
     has_unclosed_bracketed_comment = true;
   }
 }
-tokens {
-    DELIMITER
-}
-
-singleStatement
-    : statement ';'* EOF
-    ;
-
-// If you add keywords here that should not be reserved, add them to 'nonReserved' list.
-statement
-    : NEWFUNC
-        (param=STRING)?
-        (WHERE path=STRING | table=qualifiedName)?
-        (OPTION number)? (DRY RUN)?                #newFuncTable
-    | .*?                                          #passThrough
-    ;
-
-qualifiedName
-    : identifier ('.' identifier)*
-    ;
-
-identifier
-    : IDENTIFIER             #unquotedIdentifier
-    | quotedIdentifier       #quotedIdentifierAlternative
-    | nonReserved            #unquotedIdentifier
-    ;
-
-quotedIdentifier
-    : BACKQUOTED_IDENTIFIER
-    ;
-
-dataType
-    : identifier ('(' INTEGER_VALUE (',' INTEGER_VALUE)* ')')?         #primitiveDataType
-    ;
-
-number
-    : MINUS? DECIMAL_VALUE            #decimalLiteral
-    | MINUS? INTEGER_VALUE            #integerLiteral
-    | MINUS? BIGINT_LITERAL           #bigIntLiteral
-    | MINUS? SMALLINT_LITERAL         #smallIntLiteral
-    | MINUS? TINYINT_LITERAL          #tinyIntLiteral
-    | MINUS? DOUBLE_LITERAL           #doubleLiteral
-    | MINUS? BIGDECIMAL_LITERAL       #bigDecimalLiteral
-    ;
-
-constraint
-    : CHECK '(' exprToken+ ')'                                 #checkConstraint
-    ;
-
-// We don't have an expression rule in our grammar here, so we just grab the tokens and defer
-// parsing them to later. Although this is the same as `exprToken`, we have to re-define it to
-// workaround an ANTLR issue (https://github.com/delta-io/delta/issues/1205)
-predicateToken
-    :  .+?
-    ;
-
-// We don't have an expression rule in our grammar here, so we just grab the tokens and defer
-// parsing them to later.
-exprToken
-    :  .+?
-    ;
-
-// Add keywords here so that people's queries don't break if they have a column name as one of
-// these tokens
-nonReserved
-    : NEWFUNC | WHERE
-    ;
-
 
 SEMICOLON: ';';
 
@@ -155,7 +87,6 @@ RIGHT_BRACKET: ']';
 // Start of the keywords list
 //============================
 //--SPARK-KEYWORD-LIST-START
-
 ADD: 'ADD';
 AFTER: 'AFTER';
 ALL: 'ALL';
@@ -227,7 +158,6 @@ DISTINCT: 'DISTINCT';
 DISTRIBUTE: 'DISTRIBUTE';
 DIV: 'DIV';
 DROP: 'DROP';
-DRY: 'DRY';
 ELSE: 'ELSE';
 END: 'END';
 ESCAPE: 'ESCAPE';
@@ -364,7 +294,6 @@ ROLLBACK: 'ROLLBACK';
 ROLLUP: 'ROLLUP';
 ROW: 'ROW';
 ROWS: 'ROWS';
-RUN: 'RUN';
 SECOND: 'SECOND';
 SCHEMA: 'SCHEMA';
 SCHEMAS: 'SCHEMAS';

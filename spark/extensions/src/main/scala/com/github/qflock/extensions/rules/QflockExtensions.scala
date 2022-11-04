@@ -61,11 +61,13 @@ object QflockBasicRuleBuilder {
 }
 
 class QflockBasicRuleExtensions extends (SparkSessionExtensions => Unit) {
+  protected val logger: Logger = LoggerFactory.getLogger(getClass)
   def apply(e: SparkSessionExtensions): Unit = {
+    logger.info(s"added QflockBasicRule to session")
     e.injectOptimizerRule(QflockBasicRule)
-    e.injectParser { (session, parser) =>
-      new QflockSqlParser(parser)
-    }
+//    e.injectParser { (session, parser) =>
+//      new QflockSqlParser(parser)
+//    }
   }
 }
 

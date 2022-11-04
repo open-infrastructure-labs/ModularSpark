@@ -14,11 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.qflock.extensions.rules.parse
+package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.trees.TreePattern
 import org.apache.spark.sql.execution.command.LeafRunnableCommand
 import org.apache.spark.sql.types.{DoubleType, LongType, StringType}
 
@@ -28,22 +29,30 @@ import org.apache.spark.sql.types.{DoubleType, LongType, StringType}
  *    NEWFUNC ('/path/to/dir' | delta.`/path/to/dir`) [WHERE number] [DRY RUN];
  * }}}
  */
-case class NewFuncCommand(param: Option[String],
-                          path: Option[String],
-                          table: Option[TableIdentifier],
-                          number: Option[Double],
-                          dryRun: Boolean) extends LeafRunnableCommand {
+case class NFuncCommand(param: Option[String],
+                        number: Option[Double]
+                       ) extends LeafRunnableCommand {
 
   override val output: Seq[Attribute] =
-    Seq(AttributeReference("path", StringType, nullable = true)(),
+    Seq(AttributeReference("param", StringType, nullable = true)(),
         AttributeReference("number", DoubleType, nullable = true)(),
         AttributeReference("result", LongType, nullable = true)())
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    if (param.isEmpty || path.isEmpty || number.isEmpty) {
+    if (param.isEmpty || number.isEmpty) {
       Seq(Row.fromSeq(Seq("emptyPath", 1.42, 44L)))
     } else {
-      Seq(Row.fromSeq(Seq(path.get, number.get, 42L)))
+      Seq(Row.fromSeq(Seq(param.get, number.get, 42L)))
     }
   }
+}
+/**
+ * The `NEWFUNC` command implementation for Spark SQL. Example SQL:
+ * {{{
+ *    NEWFUNC ('/path/to/dir' | delta.`/path/to/dir`) [WHERE number] [DRY RUN];
+ * }}}
+ */
+
+object NewFuncCommand {
+  val testValue=42
 }
