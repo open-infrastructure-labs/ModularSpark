@@ -6,6 +6,7 @@ import os
 import subprocess
 from argparse import RawTextHelpFormatter
 from operator import itemgetter
+from pyfiglet import Figlet
 
 
 class Table:
@@ -48,10 +49,18 @@ class GenSubqueryInfo:
     default_table = "store_sales"
     default_table_path = "../data/tables.csv"
     qflock_log_path = "../data/qflock_log.txt"
-    gen_tables_cmd = './../get-table-info.py'
-    gen_qflock_log_cmd = '../docker-bench.py --query_range "*" --explain --ext remote'
-    gen_subqueries_json_cmd = './parse_qflock_query_log.py'
+    if False:
+        gen_tables_cmd = './../get-table-info.py'
+        gen_qflock_log_cmd = '../docker-bench.py --query_range "*" --explain --ext remote'
+        gen_subqueries_json_cmd = './parse_qflock_query_log.py'
+        run_subquery_cmd = './../docker-bench.py '
+    else:
+        gen_tables_cmd = './get-table-info.sh ../data'
+        gen_qflock_log_cmd = '../qflock-bench.py --query_range "*" --explain --ext remote'
+        gen_subqueries_json_cmd = './parse_qflock_query_log.py'
+        run_subquery_cmd = './../qflock-bench.py '
     default_rows_pct = 0.0001
+    subquery_error_vs_estimated = "../data/queries_vs_estimated.csv"
 
     def __init__(self):
         self._args = None
@@ -60,6 +69,15 @@ class GenSubqueryInfo:
         self._subquery_dict = None
         self._subqueries = []
         self._valid_tables = []
+        self._subquery_actual_dict = None
+        self._set_working_dir()
+
+    def _set_working_dir(self):
+        abspath = os.path.abspath(__file__)
+        dname = os.path.dirname(abspath)
+        # os.chdir(os.path.join(dname, ".."))
+        os.chdir(dname)
+        print(f"working dir: {os.getcwd()}")
 
     @staticmethod
     def _get_parser():
@@ -71,6 +89,8 @@ class GenSubqueryInfo:
                             help="Increase verbosity of output.")
         parser.add_argument("--stats", action="store_true",
                             help="Show stats only")
+        parser.add_argument("--create_views", action="store_true",
+                            help="Create sorted files")
         parser.add_argument("--json_output", default=GenSubqueryInfo.default_json_output_path,
                             help=f"Output file.  Default is {GenSubqueryInfo.default_json_output_path}")
         parser.add_argument("--json_input_path", default=GenSubqueryInfo.default_json_path,
@@ -88,11 +108,11 @@ class GenSubqueryInfo:
         self._args = self._get_parser().parse_args()
         return True
 
-    # @staticmethod
-    # def _banner():
-    #     print()
-    #     f = Figlet(font='slant')
-    #     print(f.renderText('GetSubQInfo'))
+    @staticmethod
+    def _banner():
+        print()
+        f = Figlet(font='slant')
+        print(f.renderText('GetSubQInfo'))
 
     @staticmethod
     def _create_tables():
@@ -201,7 +221,8 @@ class GenSubqueryInfo:
             if os.path.exists(results_path):
                 os.remove(results_path)
             q = subquery['query']
-            cmd = f'./../docker-bench.py --query_text \"{q}\" --results_path ./ --results_file {results_file}'
+            cmd = f'{GenSubqueryInfo.run_subquery_cmd} '\
+                  f'--query_text \"{q}\" --results_path ./ --results_file {results_file}'
             rc = subprocess.call(cmd, shell=True,
                                  stdout=subprocess.DEVNULL,
                                  stderr=subprocess.STDOUT)
@@ -244,6 +265,25 @@ class GenSubqueryInfo:
         with open(self._args.json_output, 'w') as fd:
             fd.write(json_data)
 
+    def _view_subqueries(self):
+        estimated = sorted(self._subquery_actual_dict, key=itemgetter('error_vs_estimated'), reverse=True)
+        with open(GenSubqueryInfo.subquery_error_vs_estimated, "w") as fd:
+            header = "table,actual_rows,estimated_rows,table_rows,error_vs_estimated,error_vs_overall,"\
+                     "query"
+            fd.write(f"{header}\n")
+            for sq in estimated:
+                row = f"{sq['table']},{sq['actual_rows']},{sq['estimated_rows']},"\
+                      f"{sq['table_rows']},{sq['error_vs_estimated']},{sq['error_vs_overall']},"\
+                      f"{sq['query']}"
+                fd.write(f"{row}\n")
+
+    def _load_subqueries_actual(self):
+        if not os.path.exists(GenSubqueryInfo.default_json_output_path):
+            print(f"{GenSubqueryInfo.default_json_output_path} does not exist")
+            exit(1)
+        with open(GenSubqueryInfo.default_json_output_path, 'r') as fd:
+            self._subquery_actual_dict = json.load(fd)
+
     def run(self):
         """Generates and Returns the subquery information.
 
@@ -252,15 +292,19 @@ class GenSubqueryInfo:
             2) Subquery Spark actual rows.
             3) Stats related to accuracy
         """
+        self._banner()
         self._parse_args()
-        self._load_tables()
-        self._load_subqueries()
-        self._get_subqueries()
-
-        self._run_subqueries()
-        if not self._args.stats:
-            self._calc_stats()
-        self._save_json()
+        if self._args.create_views:
+            self._load_subqueries_actual()
+            self._view_subqueries()
+        else:
+            self._load_tables()
+            self._load_subqueries()
+            self._get_subqueries()
+            self._run_subqueries()
+            if not self._args.stats:
+                self._calc_stats()
+            self._save_json()
 
 
 if __name__ == "__main__":

@@ -54,6 +54,13 @@ class QflockBench:
         if not os.path.exists(QflockBench.log_dir):
             print(f"Creating directory: {QflockBench.log_dir}")
             os.mkdir(QflockBench.log_dir)
+        self._set_working_dir()
+
+    def _set_working_dir(self):
+        abspath = os.path.abspath(__file__)
+        dname = os.path.dirname(abspath)
+        os.chdir(dname)
+        print(f"working dir: {os.getcwd()}")
 
     def _parse_test_list(self):
         if self._args.queries:

@@ -389,9 +389,6 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     opt.put("format", "parquet")
     val query = sqlQuery.replace("TABLE_TAG", relationArgs.catalogTable.get.identifier.table)
     opt.put("query", query)
-    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
-      s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
-      s"query:$query ")
     val catalogTable = relationArgs.catalogTable.get
     val tableName = catalogTable.identifier.table
     val dbName = catalogTable.identifier.database.getOrElse("")
@@ -426,13 +423,18 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
                                                        filterReferences, opt,
                                                        references, spark)
 //    opt.put("queryStats", relationForStats.toString)
-    val hdfsScanObject = QflockRemoteScan(references.toStructType, opt,
+    val qflockScan = QflockRemoteScan(references.toStructType, opt,
       Some(statsParameters),
       relationForStats.toPlanStats(relationArgs.catalogTable.get.stats.get))
+
+    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
+      s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
+      s"estRows:${qflockScan.stats.rowCount.get} " +
+      s"query:$query ")
     val ndpRel = getNdpRelation(path, schemaStr)
 //    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references,
 //      None, relationArgs.catalogTable.get)
-    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, qflockScan, references)
     val withFilter = {
       if (filtersStatus == PushdownSqlStatus.FullyValid) {
         /* Clip the filter from the DAG, since we are going to
@@ -471,9 +473,6 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     val newQuery = s"SELECT $newSelect FROM $trimmedQuery"
     opt.put("query", newQuery)
     opt.put("rulelog", opt.getOrDefault("rulelog", "") + "updateproject,")
-    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
-              s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
-              s"query:$newQuery ")
     val references = attrReferences.distinct
     val statsParam = relationArgs.statsParam.get.asInstanceOf[QflockStatsParameters]
     val statsParameters = QflockStatsParameters(
@@ -487,11 +486,15 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
       statsParam.filterReferences, opt,
       references, spark)
     //    opt.put("queryStats", relationForStats.toString)
-    val hdfsScanObject = QflockRemoteScan(references.toStructType, opt,
+    val qflockScan = QflockRemoteScan(references.toStructType, opt,
       Some(statsParameters),
       relationForStats.toPlanStats(statsParam.relationArgs.catalogTable.get.stats.get))
+    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
+              s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
+              s"estRows:${qflockScan.stats.rowCount.get} " +
+              s"query:$newQuery ")
     val ndpRel = getNdpRelation(opt.get("path"), opt.get("schema"))
-    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, qflockScan, references)
     val withFilter = {
       if (true) {
         /* Clip the filter from the DAG, since we are going to
@@ -567,9 +570,6 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     opt.put("query", newQuery)
     val updateType = if (query.contains("JOIN")) "updatejoin," else "updateproject,"
     opt.put("rulelog", opt.getOrDefault("rulelog", "") + updateType)
-    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
-      s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
-      s"query:$newQuery ")
     val references = attrReferences.distinct
     val statsParamsOrig = relationArgsProject.statsParam.get.asInstanceOf[QflockJoinStatsParameters]
     val join = statsParamsOrig.join
@@ -585,14 +585,18 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     val relationForStats = QflockJoinRelation.apply(relationArgsJoin,
       statsParameters.join, opt, references, spark)
     //    opt.put("queryStats", relationForStats.toString)
-    val hdfsScanObject = QflockRemoteScan(references.toStructType, opt,
+    val qflockScan = QflockRemoteScan(references.toStructType, opt,
       Some(statsParameters),
       relationForStats.toPlanStats)
+    qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
+      s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
+      s"estRows:${qflockScan.stats.rowCount.get} " +
+      s"query:$newQuery ")
     val ndpRel = getNdpRelation(opt.get("path"), opt.get("schema"))
 //    val scanRelation = new QflockDataSourceV2ScanRelation(ndpRel.get, hdfsScanObject,
 //      references,
 //      None, relationArgs.catalogTable.get)
-    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, hdfsScanObject, references)
+    val scanRelation = DataSourceV2ScanRelation(ndpRel.get, qflockScan, references)
     scanRelation
   }
   private def pushFilterProject(plan: LogicalPlan): LogicalPlan = {
@@ -669,14 +673,15 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     opt.put("query", newQuery)
     opt.put("aggregatequery", "true")
     opt.put("rulelog", opt.getOrDefault("rulelog", "") + "aggregate,")
+    val qflockScan = QflockRemoteScan(output.toStructType, opt,
+                                        relationArgs.statsParam)
     qflockLog(s"QueryData test:${spark.conf.get("qflockQueryName")} " +
       s"ruleLog:${opt.getOrDefault("rulelog", "")} " +
+      s"estRows:${qflockScan.stats.rowCount.get} " +
       s"query:$newQuery ")
-    val hdfsScanObject = QflockRemoteScan(output.toStructType, opt,
-                                        relationArgs.statsParam)
     val scanRelation = DataSourceV2ScanRelation(
       relationArgs.relation.asInstanceOf[DataSourceV2Relation],
-      hdfsScanObject, output)
+      qflockScan, output)
     val plan = Aggregate(
       output.take(groupingExpressions.length),
       aggregateExpressions, scanRelation)
@@ -1127,8 +1132,8 @@ case class QflockRemoteRule(spark: SparkSession) extends Rule[LogicalPlan] {
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
   def apply(inputPlan: LogicalPlan): LogicalPlan = {
 //    val after = pushJoin(pushAggregate(pushFilterProject(inputPlan)))
-    val after = pushAggregate(pushFilterProject(inputPlan))
-//    val after = pushFilterProject(inputPlan)
+//    val after = pushAggregate(pushFilterProject(inputPlan))
+    val after = pushFilterProject(inputPlan)
     after
   }
 }
