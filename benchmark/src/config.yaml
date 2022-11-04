@@ -14,10 +14,11 @@
     query-path: "queries/tpcds"
 #    limit-rows: "1000"
     query-extension: "sql"
-    query-exceptions: "2,5,43,59,13,48,24a,24b,23a,23b,14a,14b,57"
+#    query-exceptions: "2,5,43,59,13,48,24a,24b,23a,23b,14a,14b,57"
+    query-exceptions: ""
     server-path: "http://qflock-spark-dc2:9860/query"
 #    docker-stats: ""
-    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth1"
+    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth0"
 #    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,\
 #                   qflock-jdbc-dc2:tx_bytes:eth1"
   spark:
@@ -45,6 +46,7 @@
     - spark.hadoop.dfs.blocksize=16777216
     - spark.hadoop.parquet.block.size=16777216
 #    - spark.sql.extensions=com.github.qflock.extensions.rules.QflockExtensions
+#    - spark.sql.extensions=com.github.qflock.extensions.rules.QflockBasicRuleExtensions
     - spark.sql.cbo.enabled=true
     - spark.sql.statistics.histogram.enabled=true
 #    - spark.sql.statistics.histogram.numBins=4096
