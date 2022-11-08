@@ -116,11 +116,15 @@ class BenchmarkResult:
                         .save(output_path)
                 elif True:
                     logging.info(f"saving unformatted output")
-                    self.df \
-                        .write.mode("overwrite") \
-                        .format("csv") \
-                        .option("header", "true") \
-                        .save(output_path)
+                    # Save noop will just produce the data, but drop it on the floor.
+                    # This theoretically saves us time while also allowing us to measure
+                    # the performance.
+                    self.df.write.format("noop").mode("overwrite").save()
+                    # self.df \
+                    #     .write.mode("overwrite") \
+                    #     .format("csv") \
+                    #     .option("header", "true") \
+                    #     .save(output_path)
                 else:
                     logging.info(f"not saving output")
                     rows = self.df.collect()

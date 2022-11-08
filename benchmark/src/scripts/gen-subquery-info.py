@@ -3,6 +3,7 @@ import json
 import argparse
 import csv
 import os
+import re
 import subprocess
 from argparse import RawTextHelpFormatter
 from operator import itemgetter
@@ -61,6 +62,8 @@ class GenSubqueryInfo:
         run_subquery_cmd = './../qflock-bench.py '
     default_rows_pct = 0.0001
     subquery_error_vs_estimated = "../data/queries_vs_estimated.csv"
+    subquery_error_vs_overall = "../data/queries_vs_overall.csv"
+    subquery_formatted = "../data/queries_formatted.txt"
 
     def __init__(self):
         self._args = None
@@ -242,6 +245,9 @@ class GenSubqueryInfo:
                 print(f"query {i} actual_rows {rows} estimated_rows {sq['estimated_rows']} query {sq['query']}")
                 sq['actual_rows'] = int(rows)
                 i += 1
+                if not self._args.stats:
+                    self._calc_stats()
+                self._save_json()
         else:
             i = 0
             print(f"running {len(self._subqueries)} queries")
@@ -265,6 +271,26 @@ class GenSubqueryInfo:
         with open(self._args.json_output, 'w') as fd:
             fd.write(json_data)
 
+    def _get_and_or_counts(self, query):
+        and_count = len(re.findall(r'(AND )+', query))
+        or_count = len(re.findall(r'(OR )+', query))
+        return and_count, or_count
+
+    def _get_query_formatted(self, query, max_line_width=80):
+        break_words = ["WHERE", "FROM", "AND", "OR"]
+        items = query.split(" ")
+        query_formatted = ""
+        cur_line_width = 0
+        for word in items:
+            if word.upper() in break_words or cur_line_width + len(word) > max_line_width:
+                query_formatted += '\n'
+                query_formatted += word
+                cur_line_width = len(word)
+            else:
+                query_formatted += f" {word}"
+                cur_line_width += 1 + len(word)
+        return query_formatted
+
     def _view_subqueries(self):
         estimated = sorted(self._subquery_actual_dict, key=itemgetter('error_vs_estimated'), reverse=True)
         with open(GenSubqueryInfo.subquery_error_vs_estimated, "w") as fd:
@@ -274,8 +300,28 @@ class GenSubqueryInfo:
             for sq in estimated:
                 row = f"{sq['table']},{sq['actual_rows']},{sq['estimated_rows']},"\
                       f"{sq['table_rows']},{sq['error_vs_estimated']},{sq['error_vs_overall']},"\
-                      f"{sq['query']}"
+                      f'\"{sq["query"]}\"'
                 fd.write(f"{row}\n")
+        estimated = sorted(self._subquery_actual_dict, key=itemgetter('error_vs_overall'), reverse=True)
+        with open(GenSubqueryInfo.subquery_error_vs_overall, "w") as fd:
+            header = "table,actual_rows,estimated_rows,table_rows,error_vs_estimated,error_vs_overall,"\
+                     "and_count,or_count,query"
+            fd.write(f"{header}\n")
+            for sq in estimated:
+                and_cnt, or_cnt = self._get_and_or_counts(sq['query'])
+                row = f"{sq['table']},{sq['actual_rows']},{sq['estimated_rows']},"\
+                      f"{sq['table_rows']},{sq['error_vs_estimated']},{sq['error_vs_overall']},"\
+                      f"{and_cnt},{or_cnt},"\
+                      f'\"{sq["query"]}\"'
+                fd.write(f"{row}\n")
+        estimated = sorted(self._subquery_actual_dict, key=itemgetter('error_vs_overall'), reverse=True)
+        with open(GenSubqueryInfo.subquery_formatted, "w") as fd:
+            for sq in estimated:
+                fd.write(f"error_vs_overall: {sq['error_vs_overall']}\n")
+                and_cnt,or_cnt = self._get_and_or_counts(sq['query'])
+                fd.write(f"and_count: {and_cnt} or_count: {or_cnt}\n")
+                query_formatted = self._get_query_formatted(sq['query'])
+                fd.write(f"{query_formatted}\n\n")
 
     def _load_subqueries_actual(self):
         if not os.path.exists(GenSubqueryInfo.default_json_output_path):
@@ -302,9 +348,6 @@ class GenSubqueryInfo:
             self._load_subqueries()
             self._get_subqueries()
             self._run_subqueries()
-            if not self._args.stats:
-                self._calc_stats()
-            self._save_json()
 
 
 if __name__ == "__main__":
