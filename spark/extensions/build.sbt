@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- name := "qflock-extensions"
+name := "qflock-extensions"
 
 organization := ""
 version := "0.1.0"
@@ -53,10 +53,10 @@ libraryDependencies ++= Seq(
   "com.github.luben" % "zstd-jni" % "1.5.0-4",
 )
 
-antlr4GenListener in Antlr4 := true
-antlr4GenVisitor in Antlr4 := true
-antlr4Version in Antlr4 := "4.8-1"
-antlr4PackageName in Antlr4 := Some("com.github.qflock.parser")
+Antlr4 / antlr4GenListener := true
+Antlr4 / antlr4GenVisitor := true
+Antlr4 / antlr4Version := "4.8-1"
+Antlr4 / antlr4PackageName := Some("com.github.qflock.parser")
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 

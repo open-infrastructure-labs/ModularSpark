@@ -84,22 +84,7 @@ statement
         (param=STRING)?
         (WHERE path=STRING | table=qualifiedName)?
         (OPTION number)? (DRY RUN)?                #newFuncTable
-    | .*?                                                               #passThrough
-    ;
-expression
-    : booleanExpression
-    ;
-
-expressionSeq
-    : expression (COMMA expression)*
-    ;
-
-booleanExpression
-    : NOT booleanExpression                                        #logicalNot
-    | EXISTS LEFT_PAREN query RIGHT_PAREN                          #exists
-    | valueExpression predicate?                                   #predicated
-    | left=booleanExpression operator=AND right=booleanExpression  #logicalBinary
-    | left=booleanExpression operator=OR right=booleanExpression   #logicalBinary
+    | .*?                                          #passThrough
     ;
 
 qualifiedName

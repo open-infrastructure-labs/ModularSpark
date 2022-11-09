@@ -73,7 +73,11 @@ class QflockSqlParser(val delegate: ParserInterface) extends ParserInterface {
 
   override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
     builder.visit(parser.singleStatement()) match {
-      case plan: LogicalPlan => plan
+      case plan: LogicalPlan =>
+        plan match {
+          case func@NewFuncCommand(_, _, _, _, _) => plan
+          case _ => plan
+        }
       case _ => delegate.parsePlan(sqlText)
     }
   }
