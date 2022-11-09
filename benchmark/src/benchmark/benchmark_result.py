@@ -44,6 +44,8 @@ class BenchmarkResult:
         self._verbose = verbose
         self._explain = explain
         self._explain_plan = None
+        if query_name == "":
+            query_name = "custom query"
         self.query_name = query_name
         self._spark_helper = spark_helper
         self._query = query
@@ -114,23 +116,27 @@ class BenchmarkResult:
                         .save(output_path)
                 elif True:
                     logging.info(f"saving unformatted output")
-                    self.df \
-                        .write.mode("overwrite") \
-                        .format("csv") \
-                        .option("header", "true") \
-                        .save(output_path)
+                    # Save noop will just produce the data, but drop it on the floor.
+                    # This theoretically saves us time while also allowing us to measure
+                    # the performance.
+                    self.df.write.format("noop").mode("overwrite").save()
+                    # self.df \
+                    #     .write.mode("overwrite") \
+                    #     .format("csv") \
+                    #     .option("header", "true") \
+                    #     .save(output_path)
                 else:
                     logging.info(f"not saving output")
                     rows = self.df.collect()
                     self.num_rows = len(rows)
                 if self.num_rows is None:
                     output_files = glob.glob(os.path.join(output_path, 'part-*'))
-                    if len(output_files) > 0:
-                        self.size_bytes_csv = os.path.getsize(output_files[0])
-                    else:
-                        self.size_bytes_csv = os.path.getsize(output_path)
-                    with open(output_files[0], 'r') as fp:
-                        self.num_rows = len(fp.readlines())
+                    self.size_bytes_csv = 0
+                    self.num_rows = 0
+                    for f in output_files:
+                        self.size_bytes_csv += os.path.getsize(f)
+                        with open(f, 'r') as fp:
+                            self.num_rows += (len(fp.readlines()) - 1)
 
             elif "parquet" in self._output:
                 output_path = self._output_path + ".parquet"

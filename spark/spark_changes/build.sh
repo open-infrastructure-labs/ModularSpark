@@ -18,6 +18,13 @@ fi
 if [ ! -d build ]; then
   mkdir build
 fi
+SPARK_JAR_DIR=../build/spark-${SPARK_VERSION}/jars/
+if [ ! -d $SPARK_JAR_DIR ]; then
+  echo "Please build spark ($SPARK_JAR_DIR) before building extensions"
+  exit 1
+fi
+echo "Copy over spark jars ($SPARK_JAR_DIR)"
+cp $SPARK_JAR_DIR/*.jar ./lib
 
 if [ "$#" -gt 0 ]; then
   if [ "$1" == "-d" ]; then

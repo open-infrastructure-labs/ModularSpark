@@ -66,7 +66,7 @@ class ClientTests {
 
   def runQuery(query: String, tableName: String, rgOffset: String, rgCount: String,
                schema: StructType): ListBuffer[String] = {
-    val url = "http://192.168.64.3:9860/query"
+    val url = "http://10.124.48.63:9860/query"
     val client = new QflockRemoteClient(query, tableName,
       rgOffset, rgCount, schema, url)
     var data = ListBuffer.empty[String]

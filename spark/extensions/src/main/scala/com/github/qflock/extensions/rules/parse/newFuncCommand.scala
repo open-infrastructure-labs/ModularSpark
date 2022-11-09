@@ -23,9 +23,9 @@ import org.apache.spark.sql.execution.command.LeafRunnableCommand
 import org.apache.spark.sql.types.{DoubleType, LongType, StringType}
 
 /**
- * The `vacuum` command implementation for Spark SQL. Example SQL:
+ * The `NEWFUNC` command implementation for Spark SQL. Example SQL:
  * {{{
- *    VACUUM ('/path/to/dir' | delta.`/path/to/dir`) [RETAIN number HOURS] [DRY RUN];
+ *    NEWFUNC ('/path/to/dir' | delta.`/path/to/dir`) [WHERE number] [DRY RUN];
  * }}}
  */
 case class NewFuncCommand(param: Option[String],
@@ -40,6 +40,10 @@ case class NewFuncCommand(param: Option[String],
         AttributeReference("result", LongType, nullable = true)())
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    Seq(Row.fromSeq(Seq(path.get, number.get, 42L)))
+    if (param.isEmpty || path.isEmpty || number.isEmpty) {
+      Seq(Row.fromSeq(Seq("emptyPath", 1.42, 44L)))
+    } else {
+      Seq(Row.fromSeq(Seq(path.get, number.get, 42L)))
+    }
   }
 }

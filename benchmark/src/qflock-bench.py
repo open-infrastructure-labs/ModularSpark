@@ -54,6 +54,13 @@ class QflockBench:
         if not os.path.exists(QflockBench.log_dir):
             print(f"Creating directory: {QflockBench.log_dir}")
             os.mkdir(QflockBench.log_dir)
+        self._set_working_dir()
+
+    def _set_working_dir(self):
+        abspath = os.path.abspath(__file__)
+        dname = os.path.dirname(abspath)
+        os.chdir(dname)
+        print(f"working dir: {os.getcwd()}")
 
     def _parse_test_list(self):
         if self._args.queries:
@@ -312,8 +319,8 @@ class QflockBench:
             cmd += '--explain --ext explain '
         if self._args.extensions == "jdbc":
             cmd += '--ext jdbc '
-        if self._args.extensions == "remote":
-            cmd += '--ext remote '
+        if self._args.extensions is not None:
+            cmd += f'--ext {self._args.extensions} '
         if self._args.extensions == "ds":
             # Auto enable qflock_ds if we are using qflock_ds extension.
             cmd += '--qflock_ds '
