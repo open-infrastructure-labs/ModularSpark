@@ -68,6 +68,7 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -v ${STORAGE_DIR}/hive_home/conf/hive-site.xml:${HIVE_HOME}/conf/hive-site.xml \
   -v ${STORAGE_DIR}/docker/run_services.sh:${HADOOP_HOME}/bin/run_services.sh \
   -v ${STORAGE_DIR}/metastore:${HADOOP_HOME}/bin/metastore \
+  -v ${ROOT_DIR}:/R23 \
   -w ${HADOOP_HOME} \
   -e HADOOP_HOME=${HADOOP_HOME} \
   -e HIVE_HOME=${HIVE_HOME} \
