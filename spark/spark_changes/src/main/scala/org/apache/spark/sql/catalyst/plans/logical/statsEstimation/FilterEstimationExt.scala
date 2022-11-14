@@ -60,8 +60,10 @@ case class FilterEstimationExt(plan: Filter) extends Logging {
     logger.info(s"tables received from http://$statsServerUrl}: $tableString")
     tables
   }
-  def canFilter: Boolean = {
-    validTables.contains(tableName)
+  private def canFilter: Boolean = {
+    // The buffers for the strings contain nulls as well.  Eliminate the nulls for comparison.
+    val normalizedTables = validTables.map(s => s.slice(0, tableName.length))
+    normalizedTables.contains(tableName)
   }
   /**
    * Returns an option of Statistics for a Filter logical plan node.
@@ -98,7 +100,10 @@ case class FilterEstimationExt(plan: Filter) extends Logging {
     // Parse the objects to generate the query (sqlGen.query).
     val sqlGen = StatsSqlGeneration(filter.references.toSeq.toStructType,
                                     Seq(filter),
-                                    Array.empty[String])
+                                    Array.empty[String],
+                                    tableName)
+    logger.info(s"checking selectivity of ${sqlGen.query} " +
+                s"from http://$statsServerUrl}")
     // Reach out to server to get selectivity.
     val client = new StatsServerClient(tableName, sqlGen.query, s"http://$statsServerUrl")
     val selectivity = try {

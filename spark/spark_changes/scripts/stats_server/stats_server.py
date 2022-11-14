@@ -65,7 +65,7 @@ class StatsRequestHandler(http.server.BaseHTTPRequestHandler):
 
     @staticmethod
     def _get_percentage(request):
-        return _stats_object.get_filter_percentage(request['table'], request['filter'])
+        return _stats_object.get_filter_percentage(request['table'], request['query'])
 
     def do_POST(self):
         self.log(f'POST {self.path}')
@@ -86,7 +86,7 @@ class StatsRequestHandler(http.server.BaseHTTPRequestHandler):
         # Get an estimate of the percentage of rows to be returned by this filter
         # for this table.
         percentage = self._get_percentage(request)
-        print(f"table: {request['table']} filter: {request['filter']} percentage: {percentage}")
+        print(f"table: {request['table']} query: {request['query']} percentage: {percentage}")
 
         # Send back the percentage calculated.
         data = np.array([percentage])

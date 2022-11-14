@@ -3,27 +3,43 @@ import threading
 import os
 import sys
 import numpy as np
+import json
 
 # This is an example module which contains a get_filter_percentage() method.
 
 class BasicStatsObject:
 
-    def __init__(self):
-        self._valid_tables = \
-          {'call_center': 0.20, 'inventory': 0.10, 'store_sales': 0.30, 'store': 1.0}
+    default_json_stats = "stats.json"
 
-    def get_filter_percentage(self, table, filters):
+    def __init__(self):
+        with open(BasicStatsObject.default_json_stats, 'r') as fd:
+            self._stats_table = json.load(fd)['tables']
+            self._tables = self._stats_table.keys()
+
+    def get_filter_percentage(self, table, query):
         """Fetches a percentage of rows to return.
 
            This is a fixed percentage, as a demonstration of what we could do."""
-        if table in self._valid_tables:
-            return self._valid_tables[table]
+        if "WHERE " in query:
+            query_substr = query.split("WHERE ")[1].strip()
+        else:
+            query_substr = ""
+        print(f"query: {query_substr}")
+        if table in self._tables:
+            for item in self._stats_table[table]["queries"]:
+                print(f'[{query_substr}] [{item["query"]}] {item["query"] == query_substr}')
+            found_query = next((item for item in self._stats_table[table]["queries"] \
+                                if item["query"] == query_substr), None)
+            if found_query is not None:
+                return found_query["percent"]
+            else:
+                return self._stats_table[table]["default_percent"]
         else:
             return 0.42
 
     def get_valid_tables(self):
         """returns the list of tables that this module can calc stats for."""
-        keys = list(self._valid_tables.keys())
+        keys = list(self._stats_table.keys())
         tables = np.empty(len(keys), dtype='object')
         i = 0
         for k in keys:

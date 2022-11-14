@@ -25,19 +25,24 @@ import javax.json.Json
 import com.github.qflock.newfunc.server.ModSparkClient
 import org.slf4j.LoggerFactory
 
-
+/** Provides API to access the stats server.
+ *
+ * @param table - name of the table
+ * @param query - query to be performed. e.g. "SELECT * FROM call_center WHERE cc_call_center_id > 50"
+ * @param urlPath - the server url. e.g. http://myServerName:9860/stats
+ */
 class StatsServerClient(table: String,
-                        filter: String,
+                        query: String,
                         urlPath: String) extends ModSparkClient {
   private val logger = LoggerFactory.getLogger(getClass)
 
   override def toString: String = {
-    s"StatsServerClient $table $filter"
+    s"StatsServerClient $table $query"
   }
-  private def getJson(table: String, filter: String): String = {
+  private def getJson(table: String, query: String): String = {
     val queryBuilder = Json.createObjectBuilder()
     queryBuilder.add("table", table)
-    queryBuilder.add("filter", filter)
+    queryBuilder.add("query", query)
     val queryJson = queryBuilder.build
     val stringWriter = new StringWriter
     val writer = Json.createWriter(stringWriter)
@@ -65,13 +70,13 @@ class StatsServerClient(table: String,
   private var stream: Option[DataInputStream] = None
   def getStream: DataInputStream = stream.get
   def getOutputStream: OutputStream = connection.get.getOutputStream
-  def getConnection: Option[HttpURLConnection] = {
+  private def getConnection: Option[HttpURLConnection] = {
     //    logger.info(s"opening stream to: $tableName $rgOffset $rgCount")
     val url = new URL(urlPath)
     val con = url.openConnection.asInstanceOf[HttpURLConnection]
     con.setRequestMethod("POST")
     con.setRequestProperty("Accept", "application/json")
-    val jsonString = getJson(table, filter)
+    val jsonString = getJson(table, query)
     con.setRequestProperty("request-json", jsonString)
     con.setChunkedStreamingMode(4096) // .getBytes("utf-8")
     con.setDoOutput(true)

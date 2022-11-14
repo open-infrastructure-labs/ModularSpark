@@ -27,7 +27,11 @@ import org.slf4j.LoggerFactory
 
 import org.apache.spark.unsafe.types.UTF8String
 
-
+/** Provides API to access the stats server.
+ *
+ * @param urlPath - the server url. e.g. http://myServerName:9860/stats
+ * @param op - The string representation of the operation to perform.
+ */
 class StatsServerTableClient(urlPath: String,
                              op: String) extends ModSparkClient {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -56,7 +60,7 @@ class StatsServerTableClient(urlPath: String,
   private var stream: Option[DataInputStream] = None
   def getStream: DataInputStream = stream.get
   def getOutputStream: OutputStream = connection.get.getOutputStream
-  def getConnection: Option[HttpURLConnection] = {
+  private def getConnection: Option[HttpURLConnection] = {
     //    logger.info(s"opening stream to: $tableName $rgOffset $rgCount")
     val url = new URL(urlPath + "?op=" + op)
     val con = url.openConnection.asInstanceOf[HttpURLConnection]
@@ -82,8 +86,18 @@ class StatsServerTableClient(urlPath: String,
     })
     stream.get
   }
+
+  /**
+   *  Returns a string sequence containing all the tables that are available for stats calculations.
+   * @return Seq[String] containing all the strings of table names.
+   */
   def getTables: Seq[String] = {
     val inStream = getInputStream
+    // The API has the number of bytes per string, followed by total number of bytes.
+    // byte 0:  Number of bytes per string (fixed for all strings).
+    // byte 4:  Total number of bytes in all strings
+    // byte 8:  Starts string data.
+
     val fixedStringBytes = inStream.readInt()
     val numBytes = inStream.readInt()
     val numStrings = numBytes / fixedStringBytes

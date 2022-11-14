@@ -14,7 +14,7 @@ class ServerTest:
             port = ServerTest.port_default
         url = f"http://{ip}:{port}"
         data = "0123456789"
-        req = {"table": "store_sales", "filter": "ss_quantity > '0'"}
+        req = {"table": "store_sales", "query": "SELECT * FROM store_sales WHERE ss_quantity > '1'"}
         headers = {"request-json": json.dumps(req)}
         response = requests.post(url, data, headers=headers)
         print(response.text)
@@ -26,11 +26,11 @@ class ServerTest:
             port = ServerTest.port_default
         url = f"http://{ip}:{port}"
         payload = {'op': 'GET_TABLES'}
-        response = requests.get(url, params=payload)
+        response = requests.post(url, params=payload)
         print(response.text)
 
 
 if __name__ == "__main__":
     st = ServerTest()
-    st.get_percentage()
     st.get_tables()
+    st.get_percentage()

@@ -1,0 +1,31 @@
+{
+  "tables": {
+    "call_center": {
+      "default_percent": 0.22,
+      "queries": [
+        {
+          "query": "( cc_call_center_id IS NOT NULL AND cc_call_center_id > '5' )",
+          "percent": 0.20
+        }
+      ]
+    },
+    "store_sales": {
+      "default_percent": 0.32,
+      "queries": [
+        {
+          "query": "( ss_quantity IS NOT NULL AND ss_quantity > '1' )",
+          "percent": 0.30
+        }
+      ]
+    },
+    "inventory": {
+      "default_percent": 0.42,
+      "queries": [
+        {
+          "query": "( inv_quantity_on_hand IS NOT NULL AND inv_quantity_on_hand > '1' )",
+          "percent": 0.40
+        }
+      ]
+    }
+  }
+}

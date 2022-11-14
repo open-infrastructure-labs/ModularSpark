@@ -25,43 +25,35 @@ import org.apache.log4j.BasicConfigurator
 import org.slf4j.LoggerFactory
 
 
+/**
+ *  Tests for the StatsServerClient and StatsServerTableClient.
+ */
 class ClientTests {
   private val logger = LoggerFactory.getLogger(getClass)
 
-//  def getSparkSession: SparkSession = {
-//    logger.info(s"create new session")
-//    SparkSession
-//      .builder
-//      .master("local")
-//      .appName("qflock-jdbc")
-//      .config("spark.local.dir", "/tmp/spark-temp")
-//      .enableHiveSupport()
-//      .getOrCreate()
-//  }
-//
-//  private val spark = getSparkSession
-//  spark.sparkContext.setLogLevel("INFO")
-
-  def getStats(table: String, filter: String): Unit = {
+  def testClient(table: String, query: String): Unit = {
     val url = "http://qflock-storage-dc1:9860/stats"
-    val client = new StatsServerClient(table, filter, url)
+    val client = new StatsServerClient(table, query, url)
     try {
       val inStream = client.getInputStream
       val value = inStream.readDouble()
       logger.info(s"value received: $value")
     } finally client.close()
   }
-  def getStatsTest(): Unit = {
-    getStats("store_sales", "")
-  }
-  def getTablesTest(): Unit = {
-    val url = "http://qflock-storage-dc1:9860/stats"
-    val client = new StatsServerTableClient(url, "GET_TABLES")
-    try {
-      val tables = client.getTables
-      logger.info(s"tables received: ${tables.mkString(", ")}")
-    }
-    finally client.close()
+
+  def statsTest(): Unit = {
+    testClient("store_sales", "")
+    testClient("store_sales",
+      "SELECT * FROM store_sales WHERE " +
+              "( ss_quantity IS NOT NULL AND ss_quantity > '1' )")
+    testClient("inventory", "")
+    testClient("inventory",
+      "SELECT * FROM inventory WHERE " +
+              "( inv_quantity_on_hand IS NOT NULL AND inv_quantity_on_hand > '1' )")
+    testClient("call_center", "")
+    testClient("call_center",
+       "SELECT * FROM call_center WHERE " +
+               "( cc_call_center_id IS NOT NULL AND cc_call_center_id > '5' )")
   }
 
   def writeToFile(data: ListBuffer[String],
@@ -71,6 +63,15 @@ class ClientTests {
       new File(tmpFilename), true /* append */))
     data.foreach(x => writer.write(x + "\n"))
     writer.close()
+  }
+
+  def tablesTest(): Unit = {
+    val url = "http://qflock-storage-dc1:9860/stats"
+    val client = new StatsServerTableClient(url, "GET_TABLES")
+    try {
+      val tables = client.getTables
+      logger.info(s"value received: $tables")
+    } finally client.close()
   }
 }
 
@@ -82,8 +83,8 @@ object ClientTest {
     val ct = new ClientTests
     val testName = if (args.length == 0) "stats" else args(0)
     testName match {
-      case "stats" => ct.getStatsTest()
-      case "tables" => ct.getTablesTest()
+      case "stats" => ct.statsTest()
+      case "tables" => ct.tablesTest()
       case test@_ => logger.warn("Unknown test " + test)
     }
   }

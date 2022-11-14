@@ -47,11 +47,13 @@ import org.apache.spark.sql.types._
  * @param schema - StructType of fields in query.
  * @param filters - Filters list.
  * @param queryCols - Array of column names.
+ * @param tableName - The string representing the name of the table.
  * @param referenceMap [Optional] maps an attribute to a prefix to be used when referencing.
  */
 class StatsSqlGeneration(schema: StructType,
                          filters: Seq[Expression],
                          queryCols: Array[String],
+                         tableName: String,
                          referenceMap: Map[String, Seq[AttributeReference]]) {
 
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -227,7 +229,7 @@ class StatsSqlGeneration(schema: StructType,
       }
     }
     val whereClause = buildWhereClause()
-    val objectClause = "TABLE_TAG"
+    val objectClause = tableName
     var retVal = ""
     val groupByClause = "" // getGroupByClause(aggregation)
     if (whereClause.isEmpty) {
@@ -276,9 +278,10 @@ object StatsSqlGeneration {
   def apply(schema: StructType,
             filters: Seq[Expression],
             queryCols: Array[String],
+            tableName: String,
             referenceMap: Map[String, Seq[AttributeReference]] =
             Map[String, Seq[AttributeReference]]()): StatsSqlGeneration = {
-    new StatsSqlGeneration(schema, filters, queryCols, referenceMap)
+    new StatsSqlGeneration(schema, filters, queryCols, tableName, referenceMap)
   }
 
   private val filterMaxDepth = 100
