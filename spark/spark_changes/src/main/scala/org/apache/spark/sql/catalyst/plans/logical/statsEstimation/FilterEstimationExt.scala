@@ -47,7 +47,11 @@ case class FilterEstimationExt(plan: Filter) extends Logging {
       case _ => None
     }
   }
-  private val tableName: String = catalogTable.get.identifier.table
+  private val tableName: String = {
+    if (catalogTable.isDefined) {
+      catalogTable.get.identifier.table
+    } else ""
+  }
   private val sparkSession: SparkSession = SparkSession.builder().getOrCreate()
   private val statsServerUrl = sparkSession.conf.get("spark.custom.statsserver", "")
   private val validTables = getValidTables
