@@ -32,3 +32,8 @@ pushd $SPARK_HOME/python
 python setup.py sdist
 python3 -mpip install --target $SPARK_HOME/pyspark-3.3.0/ dist/pyspark-3.3.0.tar.gz
 popd
+
+pushd $SPARK_HOME/jars
+wget https://repo1.maven.org/maven2/javax/json/javax.json-api/1.1.4/javax.json-api-1.1.4.jar
+wget https://repo1.maven.org/maven2/org/glassfish/javax.json/1.1.4/javax.json-1.1.4.jar
+popd

@@ -31,6 +31,10 @@ sleep 1
 # python3 ${HADOOP_HOME}/bin/metastore/hive_metastore_proxy.py &
 python3 ${HADOOP_HOME}/bin/metastore/qflock_metastore_server.py &
 
+pushd /R23/spark/spark_changes/scripts/stats_server
+python3 stats_server.py &
+popd
+
 echo "HADOOP_READY"
 echo "HADOOP_READY" > /opt/volume/status/HADOOP_STATE
 

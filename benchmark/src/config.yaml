@@ -49,6 +49,7 @@
 #    - spark.sql.extensions=com.github.qflock.extensions.rules.QflockBasicRuleExtensions
     - spark.sql.cbo.enabled=true
     - spark.sql.statistics.histogram.enabled=true
+    - spark.custom.statsserver=qflock-storage-dc1:9860
 #    - spark.sql.statistics.histogram.numBins=4096
 #    - spark.sql.cbo.planStats.enabled=true
 #    - spark.sql.cbo.joinReorder.enabled=true
@@ -60,7 +61,7 @@
     # non-debug mode extraJavaOptions
     - 'spark.driver.extraJavaOptions=-classpath /qflock/spark/spark_changes/target/scala-2.12/*:/build/spark-3.3.0/jars/*'
     # debug mode extraJavaOptions
-    - 'spark.driver.extraJavaOptions=-classpath /qflock/spark/spark_changes/target/scala-2.12/*:/build/spark-3.3.0/jars/* -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=172.19.0.3:5006'
+    - 'spark.driver.extraJavaOptions=-classpath /qflock/spark/spark_changes/target/scala-2.12/*:/build/spark-3.3.0/jars/* -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=172.21.0.3:5006'
     packages:
     - javax.json:javax.json-api:1.1.4
     - org.glassfish:javax.json:1.1.4
