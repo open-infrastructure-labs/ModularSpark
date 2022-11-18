@@ -30,7 +30,7 @@ def get_docker_ip(docker_name: str):
     if docker_name == socket.gethostname():
         return '127.0.0.1'
 
-    result = subprocess.run('docker network inspect modular-spark-1-NETWORK'.split(' '), stdout=subprocess.PIPE)
+    result = subprocess.run('docker network inspect r23-1-NETWORK'.split(' '), stdout=subprocess.PIPE)
     d = json.loads(result.stdout)
 
     for c in d[0]['Containers'].values():
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         data_center = sys.argv[1]
 
-    server = f"modular-spark-1-storage-{data_center}"
+    server = f"r23-1-storage-{data_center}"
     print(f"server: {server}")
 
     storage_ip = get_docker_ip(server)

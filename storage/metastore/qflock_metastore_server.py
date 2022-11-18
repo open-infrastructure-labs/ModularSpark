@@ -261,11 +261,11 @@ def get_storage_ip():
     if os.getenv('RUNNING_MODE') is not None:
         return 'localhost'
 
-    result = subprocess.run('docker network inspect modular-spark-1-NETWORK'.split(' '), stdout=subprocess.PIPE)
+    result = subprocess.run('docker network inspect r23-1-NETWORK'.split(' '), stdout=subprocess.PIPE)
     d = json.loads(result.stdout)
     for c in d[0]['Containers'].values():
         log(c['Name'], c['IPv4Address'].split('/')[0])
-        if c['Name'] == 'modular-spark-1-storage-dc1':
+        if c['Name'] == 'r23-1-storage-dc1':
             addr = c['IPv4Address'].split('/')[0]
             with open('host_aliases', 'w') as f:
                 f.write(f'qflock-storage {addr}')
