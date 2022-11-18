@@ -1,12 +1,11 @@
 #!/bin/bash
+set -e # exit on error
+ROOT_DIR=$(git rev-parse --show-toplevel)
+source $ROOT_DIR/version
 
-# docker kill sparkworker
-# docker kill sparkmaster
-# docker kill qflock-spark-dc1
+DOCKER_NAME=$(docker container ls -q --filter name="${BASE_SPARK_CONTAINER_NAME}-dc1")
 
-QFLOCK_SPARK=$(docker container ls -q --filter name="qflock-spark*")
-
-if [ ! -z "$QFLOCK_SPARK" ]
+if [ ! -z "$DOCKER_NAME" ]
 then
-  docker container stop ${QFLOCK_SPARK}
+  docker container stop ${DOCKER_NAME}
 fi

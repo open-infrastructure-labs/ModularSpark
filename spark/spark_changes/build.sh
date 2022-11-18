@@ -44,7 +44,7 @@ if [ "$#" -gt 0 ]; then
 else
   echo "Building spark changes"
   docker run --rm -it --name spark-changes-build \
-    --network qflock-net \
+    --network ${BASE_NETWORK_NAME} \
     --mount type=bind,source="$(pwd)",target=/spark_changes \
     -v "${WORKING_DIR}/build/.m2:${DOCKER_HOME_DIR}/.m2" \
     -v "${WORKING_DIR}/build/.gnupg:${DOCKER_HOME_DIR}/.gnupg" \

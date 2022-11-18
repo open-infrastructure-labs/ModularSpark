@@ -15,10 +15,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import sys
+import os
 import subprocess
 import time
+import yaml
+import logging
 
+_root_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+_default_config_path = os.path.join(_root_path, "config.yaml")
+
+
+def load_config(config_file=_default_config_path):
+    if not os.path.exists(config_file):
+        logging.info(f"{config_file} is missing.  Please add it.")
+        exit(1)
+    with open(config_file, "r") as fd:
+        try:
+            config = yaml.safe_load(fd)
+        except yaml.YAMLError as err:
+            logging.info(err)
+            logging.info(f"{config_file} is missing.  Please add it.")
+            exit(1)
+        return config
 #
 # The purpose of this script is to launch our qflock-bench.py in a docker.
 # In some cases we also need to re-quote arguments whose quotes were stripped by python.
@@ -35,7 +55,9 @@ if __name__ == "__main__":
             if i < argc:
                 arg_string += f'"{sys.argv[i]}" '
         i += 1
-    cmd = "docker exec -it qflock-spark-dc1 ./qflock-bench.py " + arg_string
+    config = load_config()
+    container_name = config['benchmark']['container']
+    cmd = f"docker exec -it {container_name} ./qflock-bench.py " + arg_string
     print(cmd)
     start_time = time.time()
     status = subprocess.call(cmd, shell=True)

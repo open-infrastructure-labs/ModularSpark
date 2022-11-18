@@ -21,6 +21,7 @@ if [ ! -f ${STORAGE_DIR}/hadoop_home/etc/hadoop/core-site-${DC}.xml ]
 fi
 
 USER_NAME=${SUDO_USER:=$USER}
+STORAGE_DOCKER_NAME="${BASE_STORAGE_DOCKER_NAME}-${USER_NAME}"
 
 # Set the home directory in the Docker container.
 HADOOP_HOME=/opt/hadoop/hadoop-3.3.0
@@ -75,8 +76,8 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -e RUNNING_MODE=${RUNNING_MODE} \
   -e USER=${USER_NAME} \
   --network ${BASE_NETWORK_NAME} \
-  --name qflock-storage-${DC}  --hostname qflock-storage-${DC} \
-  qflock-storage-${USER_NAME} ${CMD}"
+  --name ${BASE_STORAGE_CONTAINER_NAME}-${DC}  --hostname ${BASE_STORAGE_CONTAINER_NAME}-${DC} \
+  ${STORAGE_DOCKER_NAME} ${CMD}"
 
 # echo ${DOCKER_RUN}
 

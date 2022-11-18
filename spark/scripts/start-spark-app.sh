@@ -24,12 +24,8 @@ touch ${SPARK_DIR}/volume/ssh/config
 CMD="/qflock/spark/scripts/start_spark_docker.sh"
 RUNNING_MODE="daemon"
 START_LOCAL="YES"
-STORAGE_HOST1="--add-host=${BASE_NETWORK_NAME}:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} qflock-storage-dc1)"
-# STORAGE_HOST2="--add-host=qflock-storage-dc2:$($SCRIPTS_DIR/get-docker-ip.py qflock-storage-dc2)"
-#DC2_SPARK_HOST="--add-host=qflock-spark-dc2:$($SCRIPTS_DIR/get-docker-ip.py qflock-spark-dc2)"
+STORAGE_HOST1="--add-host=${BASE_SPARK_CONTAINER_NAME}-dc1:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} ${BASE_STORAGE_CONTAINER_NAME}-dc1)"
 LOCAL_DOCKER_HOST="--add-host=local-docker-host:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} ${BASE_NETWORK_NAME})"
-# JDBC_DOCKER="--add-host=qflock-jdbc-dc2:$($SCRIPTS_DIR/get-docker-ip.py qflock-jdbc-dc2)"
-
 SPARK_RAMDISK=${SPARK_DIR}/spark_rd
 if [ ! -d $SPARK_RAMDISK ]; then
     mkdir -p $SPARK_RAMDISK
@@ -44,10 +40,10 @@ if [ $RUNNING_MODE = "interactive" ]; then
   DOCKER_IT="-i -t"
 fi
 echo "Command is: ${CMD}"
-DOCKER_NAME="qflock-spark-dc1"
+DOCKER_NAME="${BASE_SPARK_CONTAINER_NAME}-dc1"
 if [ ${START_LOCAL} == "YES" ]; then
   DOCKER_RUN="docker run ${DOCKER_IT} --rm \
-  -p 5006:5006 \
+  -p 5007:5007 \
   --name $DOCKER_NAME --hostname $DOCKER_NAME \
   $STORAGE_HOST1 $LOCAL_DOCKER_HOST \
   --network ${BASE_NETWORK_NAME} \
@@ -78,9 +74,9 @@ if [ ${START_LOCAL} == "YES" ]; then
   ${SPARK_DOCKER_NAME} ${CMD}"
 else
   DOCKER_RUN="docker run ${DOCKER_IT} --rm \
-  -p 5006:5006 \
+  -p 5007:5007 \
   --name $DOCKER_NAME --hostname $DOCKER_NAME \
-  --network qflock-net --ip ${LAUNCHER_IP} ${DOCKER_HOSTS} \
+  --network ${BASE_NETWORK_NAME} --ip ${LAUNCHER_IP} ${DOCKER_HOSTS} \
   -w /qflock/benchmark/src \
   -e MASTER=spark://sparkmaster:7077 \
   -e SPARK_CONF_DIR=/conf \

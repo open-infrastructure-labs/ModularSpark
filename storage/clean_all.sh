@@ -17,7 +17,9 @@ if [ "${NO_CLEAN_DOCKERS}" != "1" ]; then
 else
     echo "storage is not cleaning dockers, NO_CLEAN_DOCKERS=1"
 fi
-
-
-rm ${ROOT_DIR}/docker/*.tar.gz || true
+# By default we do not delete downloaded content.
+if [ "${CLEAN_DOWNLOADS}" == "1" ]; then
+    echo "storage is cleaning downloads"
+    rm ${ROOT_DIR}/docker/*.tar.gz || true
+fi
 popd

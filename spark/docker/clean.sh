@@ -19,8 +19,12 @@ else
     echo "Spark is not cleaning dockers, NO_CLEAN_DOCKERS=1"
 fi
 
-if [ -e ./spark*.tgz ]; then
-    rm -rf ./spark*.tgz
-    rm -rf ./hadoop*.tar.gz
+# By default we do not delete downloaded content.
+if [ "${CLEAN_DOWNLOADS}" == "1" ]; then
+    echo "Spark is cleaning downloads"
+    if [ -e ./spark*.tgz ]; then
+        rm -rf ./spark*.tgz
+        rm -rf ./hadoop*.tar.gz
+    fi
 fi
 popd
