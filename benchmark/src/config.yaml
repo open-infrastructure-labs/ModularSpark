@@ -3,14 +3,15 @@
   benchmark:
     name: TPC-DS
     db-name: tpcds
+    container: modular-spark-1-spark-dc1
     docker-name: qflock-spark-app
     tool-path: "../tpcds-kit/tools"
     tool-commandline: "./dsdgen -scale 1 -RNGSEED 42"
     file-extension: "dat"
     raw-data-path: "../data/tpcds-data"
-    parquet-path: "hdfs://qflock-storage-dc1:9000/tpcds-parquet"
+    parquet-path: "hdfs://modular-spark-1-storage-dc1:9000/tpcds-parquet"
 #    parquet-path: "/qflock/benchmark/data/tpcds-parquet"
-    # parquet-path: "webhdfs://qflock-storage:9870/tpcds-parquet"
+    # parquet-path: "webhdfs://modular-spark-1-storage:9870/tpcds-parquet"
     query-path: "queries/tpcds"
 #    limit-rows: "1000"
     query-extension: "sql"
@@ -18,12 +19,12 @@
     query-exceptions: ""
     server-path: "http://qflock-spark-dc2:9860/query"
 #    docker-stats: ""
-    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,qflock-storage-dc1:tx_bytes:eth0"
-#    docker-stats: "qflock-storage-dc1:tx_bytes:eth0,\
+    docker-stats: "modular-spark-1-storage-dc1:tx_bytes:eth0,modular-spark-1-storage-dc1:tx_bytes:eth0"
+#    docker-stats: "modular-spark-1-storage-dc1:tx_bytes:eth0,\
 #                   qflock-jdbc-dc2:tx_bytes:eth1"
   spark:
     master: local[1]
-    hive-metastore: "qflock-storage-dc1"
+    hive-metastore: "modular-spark-1-storage-dc1"
     hive-metastore-ports: "default:9084"
     conf:
     - spark.driver.maxResultSize=2g
@@ -41,7 +42,7 @@
 #    - spark.sql.hive.metastore.version=3.1.2
 #    - spark.sql.hive.metastore.jars=path
 #    - spark.sql.hive.metastore.jars.path=jars/*.jar
-    - spark.sql.warehouse.dir=hdfs://qflock-storage-dc1:9000/user/hive/warehouse3
+    - spark.sql.warehouse.dir=hdfs://modular-spark-1-storage-dc1:9000/user/hive/warehouse3
     # The below write out with 16 Mb row groups.
     - spark.hadoop.dfs.blocksize=16777216
     - spark.hadoop.parquet.block.size=16777216
@@ -49,7 +50,7 @@
 #    - spark.sql.extensions=com.github.qflock.extensions.rules.QflockBasicRuleExtensions
     - spark.sql.cbo.enabled=true
     - spark.sql.statistics.histogram.enabled=true
-    - spark.custom.statsserver=qflock-storage-dc1:9860
+    - spark.custom.statsserver=modular-spark-1-storage-dc1:9860
 #    - spark.sql.statistics.histogram.numBins=4096
 #    - spark.sql.cbo.planStats.enabled=true
 #    - spark.sql.cbo.joinReorder.enabled=true

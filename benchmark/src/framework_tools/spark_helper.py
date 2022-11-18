@@ -305,6 +305,7 @@ class SparkHelper:
         # self._spark.sparkContext.hadoopConfiguration.setInt("dfs.blocksize", block_size)
         # self._spark.sparkContext.hadoopConfiguration.setInt("parquet.block.size", block_size)
         #df.repartition(1) \
+        logging.info(f"output file is: {output_file}")
         df.repartition(1).fillna(0).fillna("") \
             .write \
             .option("header", True) \

@@ -51,7 +51,7 @@ if [ "$#" -gt 0 ]; then
 else
   echo "Building extensions"
   docker run --rm -it --name extensions-build \
-    --network qflock-net \
+    --network ${BASE_NETWORK_NAME} \
     --mount type=bind,source="$(pwd)",target=/extensions \
     -v "${WORKING_DIR}/build/.m2:${DOCKER_HOME_DIR}/.m2" \
     -v "${WORKING_DIR}/build/.gnupg:${DOCKER_HOME_DIR}/.gnupg" \

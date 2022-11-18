@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
-set -e               # exit on error
-pushd "$(dirname "$0")" # connect to root
+set -e # exit on error
+#pushd "$(dirname "$0")" # connect to root
+ROOT_DIR=$(git rev-parse --show-toplevel)
+source $ROOT_DIR/version
 
-ROOT_DIR=$(pwd)
-
-DOCKER_DIR=${ROOT_DIR}
+STORAGE_DIR=${ROOT_DIR}/storage
+DOCKER_DIR=${STORAGE_DIR}/docker
 DOCKER_FILE="${DOCKER_DIR}/Dockerfile"
-DOCKER_NAME=qflock-storage
+DOCKER_NAME="${BASE_DOCKER_NAME}-storage"
+echo "docker name: $DOCKER_NAME"
+pushd $DOCKER_DIR
+
 
 # Download Hadoop
 ENV_HADOOP_VERSION=3.3.0
@@ -24,6 +28,7 @@ then
 fi
 
 DOCKER_CMD="docker build -t ${DOCKER_NAME} --build-arg HADOOP_VERSION -f $DOCKER_FILE $DOCKER_DIR"
+echo $DOCKER_CMD
 eval "$DOCKER_CMD"
 
 USER_NAME=${SUDO_USER:=$USER}
