@@ -97,10 +97,10 @@ class ParseQflockLog:
                         self.queries[query_key] = {
                         'query': query, 'rule_log': rule_log, 'table': table,
                         'columns': [], 'filters': filters, 'unique_filters': ','.join(unique_filters),
-                        'estimated_rows': int(est_rows), 'count': 1, 'query_key': query_key,
+                        'estimated_rows': int(est_rows), 'query_repeat_count': 1, 'query_key': query_key,
                         'tests': [name]}
                     else:
-                        self.queries[query_key]['count'] += 1
+                        self.queries[query_key]['query_repeat_count'] += 1
                         if name not in self.queries[query_key]['tests']:
                             self.queries[query_key]['tests'].append(name)
                     if columns not in self.queries[query_key]['columns']:
@@ -109,10 +109,10 @@ class ParseQflockLog:
                         query_result['queries'][query] = {
                         'query': query, 'rule_log': rule_log, 'table': table,
                         'columns': columns, 'filters': filters, 'unique_filters': ','.join(unique_filters),
-                        'estimated_rows': int(est_rows), 'count': 1, 'query_key': query_key,
+                        'estimated_rows': int(est_rows), 'query_repeat_count': 1, 'query_key': query_key,
                         'test': [name]}
                     else:
-                        query_result['queries'][query]['count'] += 1
+                        query_result['queries'][query]['query_repeat_count'] += 1
                     if query not in self.unique_queries:
                         self.unique_queries[query] = 0
                     else:

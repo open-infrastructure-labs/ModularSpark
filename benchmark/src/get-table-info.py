@@ -26,7 +26,7 @@ if __name__ == "__main__":
     dest = "../data/"
     if len(sys.argv) > 1:
         dest = sys.argv[1]
-    cmd = f"docker exec -it qflock-spark-dc1 ./scripts/get-table-info.sh {dest}"
+    cmd = f"docker exec -it r23-1-spark-dc1 ./scripts/get-table-info.sh {dest}"
     print(cmd)
     status = subprocess.call(cmd, shell=True)
     if status != 0:

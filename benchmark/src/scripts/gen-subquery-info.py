@@ -225,7 +225,8 @@ class GenSubqueryInfo:
                 os.remove(results_path)
             q = subquery['query']
             cmd = f'{GenSubqueryInfo.run_subquery_cmd} '\
-                  f'--query_text \"{q}\" --results_path ./ --results_file {results_file}'
+                  f'--query_text \"{q}\" --results_path ./ --results_file {results_file} --output_path output '
+            # print(cmd)
             rc = subprocess.call(cmd, shell=True,
                                  stdout=subprocess.DEVNULL,
                                  stderr=subprocess.STDOUT)
