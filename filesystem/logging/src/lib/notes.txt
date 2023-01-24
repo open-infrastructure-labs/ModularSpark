@@ -1,0 +1,5 @@
+set $start_index = rec_index - 200
+while ($start_index < rec_index)
+p debug_rec[$start_index]
+set $start_index = $start_index + 1
+end
