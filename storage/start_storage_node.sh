@@ -97,6 +97,9 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -e USER=${USER_NAME} \
   --network ${BASE_NETWORK_NAME} \
   --name ${BASE_STORAGE_CONTAINER_NAME}-${NODE_ID}  --hostname ${BASE_STORAGE_CONTAINER_NAME}-${NODE_ID} \
+  --device /dev/fuse \
+  --cap-add SYS_ADMIN \
+  --security-opt apparmor:unconfined \
   ${STORAGE_DOCKER_NAME} ${CMD}"
 
 # echo ${DOCKER_RUN}

@@ -30,18 +30,15 @@ fi
 export CLASSPATH=$(bin/hadoop classpath)
 sleep 1
 
-# Hive setup
-# export PATH=$PATH:$HIVE_HOME/bin
-# $HIVE_HOME/bin/hive --service metastore &> /opt/volume/metastore/metastore.log &
-# sleep 1
+if [ ${NODE_ID} == "0" ]; then # Start Metastore on node 0 only
+    python3 ${HADOOP_HOME}/bin/metastore/qflock_metastore_server.py &
+fi
 
-# python3 ${HADOOP_HOME}/bin/metastore/hive_metastore_proxy.py &
-
-python3 ${HADOOP_HOME}/bin/metastore/qflock_metastore_server.py &
-
-pushd /R23/spark/spark_changes/scripts/stats_server
-python3 stats_server.py &
-popd
+if [ ${NODE_ID} == "0" ]; then # Start stats_server on node 0 only
+    pushd /R23/spark/spark_changes/scripts/stats_server
+    python3 stats_server.py &
+    popd
+fi 
 
 echo "HADOOP_READY"
 echo "HADOOP_READY" > /opt/volume/status/HADOOP_STATE

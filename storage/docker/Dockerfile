@@ -38,15 +38,15 @@ ADD /hadoop-${ENV_HADOOP_VERSION}.tar.gz /opt/hadoop
 
 # https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
 # https://downloads.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
-RUN mkdir -p /opt/hive
+# RUN mkdir -p /opt/hive
 # RUN curl -L https://downloads.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz | tar -xz -C /opt/hive
-ADD /apache-hive-3.1.2-bin.tar.gz /opt/hive
+# ADD /apache-hive-3.1.2-bin.tar.gz /opt/hive
 
 # Fix guava incompatibility issue
 ENV HADOOP_HOME=/opt/hadoop/hadoop-3.3.0
-ENV HIVE_HOME=/opt/hive/apache-hive-3.1.2-bin
-RUN mv ${HIVE_HOME}/lib/guava-19.0.jar ${HIVE_HOME}/lib/guava-19.0.jar.save \
-    && cp ${HADOOP_HOME}/share/hadoop/hdfs/lib/guava-27.0-jre.jar $HIVE_HOME/lib/
+# ENV HIVE_HOME=/opt/hive/apache-hive-3.1.2-bin
+# RUN mv ${HIVE_HOME}/lib/guava-19.0.jar ${HIVE_HOME}/lib/guava-19.0.jar.save \
+#     && cp ${HADOOP_HOME}/share/hadoop/hdfs/lib/guava-27.0-jre.jar $HIVE_HOME/lib/
 
 RUN apt-get -q update \
     && apt-get -q install -y --no-install-recommends \
@@ -64,9 +64,9 @@ RUN apt-get -q update  \
         iperf3
 
 # pvfs2
-RUN sudo apt-get -q update &&  \
-    sudo apt-get install -y automake build-essential bison flex libattr1 libattr1-dev \
-                            fuse libfuse-dev git pkg-config
+RUN apt-get -q update &&  \
+    apt-get -q install -y automake build-essential bison flex libattr1 libattr1-dev \
+                            fuse3 libfuse3-dev git pkg-config
 
 COPY entry.sh /usr/local/bin/entry.sh
 RUN chmod a+x /usr/local/bin/entry.sh
