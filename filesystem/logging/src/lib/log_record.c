@@ -110,7 +110,6 @@ void logger_record_generic(log_opcode_t op,
                            unsigned long arg0, unsigned long arg1, unsigned long arg2, unsigned long arg3)
 {
     if (!log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
-        fprintf(stderr, "log service not initialized\n");
         return;
     }
     log_record_t *rec = NULL;
@@ -153,7 +152,7 @@ void logger_record_open(const char *filename,
                         uint64_t handle)
 {
     if (!log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
-        fprintf(stderr, "log service not initialized\n");
+        // fprintf(stderr, "log service not initialized\n");
         return;
     }
     log_opcode_t op = LOG_OPCODE_OPEN;                        
@@ -184,7 +183,7 @@ void logger_record_rw(log_opcode_t op,
                       uint64_t length)
 {
     if (!log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
-        fprintf(stderr, "log service not initialized\n");
+        // fprintf(stderr, "log service not initialized\n");
         return;
     }
     log_record_t *rec = NULL;

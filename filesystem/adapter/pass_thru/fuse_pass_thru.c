@@ -767,8 +767,8 @@ int main(int argc, char *argv[])
 {
 	int ret = 0;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    
-    logger_init();
+
+    // logger_init();
 
     /* This is required so that the fuse_opt_parse below can free on error. */
 	fuse_adapter_options.path = strdup("");
