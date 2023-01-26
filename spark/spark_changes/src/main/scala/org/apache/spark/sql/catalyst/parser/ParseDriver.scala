@@ -102,7 +102,7 @@ abstract class AbstractSqlParser extends ParserInterface with SQLConfHelper with
   protected def astBuilder: AstBuilder
 
   protected def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
-    logInfo(s"Changed Code Parsing command: $command")
+    // logInfo(s"Changed Code Parsing command: $command")
 
     val lexer = new SqlBaseLexer(new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()

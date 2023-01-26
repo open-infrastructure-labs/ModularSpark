@@ -13,6 +13,13 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV DEBCONF_TERSE true
 ENV TZ=US/Eastern
 
+# Install debug tools.
+RUN apt-get -q update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata \
+ && apt-get install -y wget curl unzip nano sudo vim htop iproute2 iputils-ping lsof fio \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
 # Install Hadoop dependencies
 RUN apt-get -q update \
     && apt-get -q install -y --no-install-recommends \
@@ -52,10 +59,14 @@ RUN apt-get -q update \
 
 RUN pip3 install pandas sqlparse fastparquet pyarrow thrift
 
-RUN apt-get -q update \
+RUN apt-get -q update  \
     && apt-get -q install -y --no-install-recommends \
         iperf3
 
+# pvfs2
+RUN sudo apt-get -q update &&  \
+    sudo apt-get install -y automake build-essential bison flex libattr1 libattr1-dev \
+                            fuse libfuse-dev git pkg-config
 
 COPY entry.sh /usr/local/bin/entry.sh
 RUN chmod a+x /usr/local/bin/entry.sh

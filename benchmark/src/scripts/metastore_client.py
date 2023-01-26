@@ -53,7 +53,7 @@ class HiveMetastoreClient:
         logging.info(f"Successfully connected to metastore: {metastore_ip}:{metastore_port}")
 
 if __name__ == "__main__":
-    client = HiveMetastoreClient("qflock-storage-dc1", "9084")
+    client = HiveMetastoreClient("r23-1-storage-dc1", "9084")
 
     tables = client.client.get_all_tables("tpcds")
 

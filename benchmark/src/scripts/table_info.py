@@ -8,7 +8,7 @@ import pyarrow.fs
 
 class TableMetadata:
     def __init__(self, dest_path=""):
-        metastore_ip = "qflock-storage-dc1"
+        metastore_ip = "r23-1-storage-dc1"
         metastore_port = "9084"
         self._metastore_client = HiveMetastoreClient(metastore_ip, metastore_port)
         self._dest_path = dest_path

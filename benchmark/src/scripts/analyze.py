@@ -54,12 +54,12 @@ class Result:
         self.status = d['status']
         self.rows = int(d['rows'])
         self.seconds = float(d['seconds'])
-        self.jdbc_bytes = int(d['qflock-storage-dc1:tx_bytes:eth0']) + int(d['qflock-spark-dc2:tx_bytes:eth1'])
-        self.spark_bytes = int(d['qflock-storage-dc1:tx_bytes:eth0']) + int(d['qflock-storage-dc2:tx_bytes:eth1'])
-        self.jdbc_remote_bytes =  int(d['qflock-spark-dc2:tx_bytes:eth1'])
-        self.spark_remote_bytes = int(d['qflock-storage-dc2:tx_bytes:eth1'])
-        self.jdbc_local_bytes = int(d['qflock-storage-dc1:tx_bytes:eth0'])
-        self.spark_local_bytes = int(d['qflock-storage-dc1:tx_bytes:eth0'])
+        self.jdbc_bytes = int(d['r23-1-storage-dc1:tx_bytes:eth0']) + int(d['r23-1-spark-dc2:tx_bytes:eth1'])
+        self.spark_bytes = int(d['r23-1-storage-dc1:tx_bytes:eth0']) + int(d['r23-1-storage-dc2:tx_bytes:eth1'])
+        self.jdbc_remote_bytes =  int(d['r23-1-spark-dc2:tx_bytes:eth1'])
+        self.spark_remote_bytes = int(d['r23-1-storage-dc2:tx_bytes:eth1'])
+        self.jdbc_local_bytes = int(d['r23-1-storage-dc1:tx_bytes:eth0'])
+        self.spark_local_bytes = int(d['r23-1-storage-dc1:tx_bytes:eth0'])
 
 
 class AnalyzeData:
