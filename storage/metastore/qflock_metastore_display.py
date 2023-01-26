@@ -56,7 +56,7 @@ def get_storage_size(location: str):
 
 
 if __name__ == '__main__':
-    data_center = "dc1"
+    data_center = "0"
     if len(sys.argv) > 1:
         data_center = sys.argv[1]
 

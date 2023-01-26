@@ -5,7 +5,9 @@ set -e # exit on error
 rm -f /opt/volume/status/HADOOP_STATE
 
 if [ ! -f /opt/volume/namenode/current/VERSION ]; then
-    "${HADOOP_HOME}/bin/hdfs" namenode -format
+    if [ ${NODE_ID} == "0" ]; then
+        "${HADOOP_HOME}/bin/hdfs" namenode -format
+    fi
     # $HIVE_HOME/bin/schematool -dbType derby -initSchema
 fi
 
@@ -15,10 +17,15 @@ sudo service ssh start
 export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HADOOP_HOME/lib/native
 
-echo "Starting Name Node ..."
-"${HADOOP_HOME}/bin/hdfs" --daemon start namenode
-echo "Starting Data Node ..."
-"${HADOOP_HOME}/bin/hdfs" --daemon start datanode
+
+if [ ${NODE_ID} == "0" ]; then # Start HDFS on node 0 only, later we will start datanodes on other storage nodes
+    echo "Starting Name Node ..."
+    "${HADOOP_HOME}/bin/hdfs" --daemon start namenode
+
+    echo "Starting Data Node ..."
+    "${HADOOP_HOME}/bin/hdfs" --daemon start datanode
+fi
+
 
 export CLASSPATH=$(bin/hadoop classpath)
 sleep 1
@@ -29,6 +36,7 @@ sleep 1
 # sleep 1
 
 # python3 ${HADOOP_HOME}/bin/metastore/hive_metastore_proxy.py &
+
 python3 ${HADOOP_HOME}/bin/metastore/qflock_metastore_server.py &
 
 pushd /R23/spark/spark_changes/scripts/stats_server

@@ -265,7 +265,7 @@ def get_storage_ip():
     d = json.loads(result.stdout)
     for c in d[0]['Containers'].values():
         log(c['Name'], c['IPv4Address'].split('/')[0])
-        if c['Name'] == 'r23-1-storage-dc1':
+        if c['Name'] == 'r23-1-storage-0':
             addr = c['IPv4Address'].split('/')[0]
             with open('host_aliases', 'w') as f:
                 f.write(f'qflock-storage {addr}')
