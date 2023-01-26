@@ -9,9 +9,9 @@ echo "ROOT_DIR ${ROOT_DIR}"
 
 USER_NAME=${SUDO_USER:=$USER}
 
-echo $BASE_STORAGE_CONTAINER_NAME-dc1
+echo $BASE_STORAGE_CONTAINER_NAME-0
 # Create ssh authorized_keys
-docker exec -it $BASE_STORAGE_CONTAINER_NAME-dc1 cat ~/.ssh/id_rsa.pub >> ./authorized_keys
+docker exec -it $BASE_STORAGE_CONTAINER_NAME-0 cat ~/.ssh/id_rsa.pub >> ./authorized_keys
 docker exec -it $BASE_SPARK_CONTAINER_NAME-dc1 cat ~/.ssh/id_rsa.pub >> ./authorized_keys
 
 chmod 600 ./authorized_keys

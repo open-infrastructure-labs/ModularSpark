@@ -24,7 +24,7 @@ touch ${SPARK_DIR}/volume/ssh/config
 CMD="/qflock/spark/scripts/start_spark_docker.sh"
 RUNNING_MODE="daemon"
 START_LOCAL="YES"
-STORAGE_HOST1="--add-host=${BASE_SPARK_CONTAINER_NAME}-dc1:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} ${BASE_STORAGE_CONTAINER_NAME}-dc1)"
+STORAGE_HOST1="--add-host=${BASE_SPARK_CONTAINER_NAME}-dc1:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} ${BASE_STORAGE_CONTAINER_NAME}-0)"
 LOCAL_DOCKER_HOST="--add-host=local-docker-host:$($SCRIPTS_DIR/get-docker-ip.py ${BASE_NETWORK_NAME} ${BASE_NETWORK_NAME})"
 SPARK_RAMDISK=${SPARK_DIR}/spark_rd
 if [ ! -d $SPARK_RAMDISK ]; then
