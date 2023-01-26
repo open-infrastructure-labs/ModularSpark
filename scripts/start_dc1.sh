@@ -8,7 +8,7 @@ echo "ROOT_DIR ${ROOT_DIR}"
 ${ROOT_DIR}/init_networks.sh
 
 pushd  ${ROOT_DIR}/../storage
-./start_storage_dc.sh dc1
+./start_storage_node.sh --node_id=0
 popd
 
 pushd ${ROOT_DIR}/../spark
