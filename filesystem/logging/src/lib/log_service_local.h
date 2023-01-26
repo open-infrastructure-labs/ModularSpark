@@ -22,19 +22,53 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdint.h>
+#include <openssl/sha.h>
+#include <linux/limits.h>
+#include "logger.h"
 #include "queue.h"
+
+enum {
+    LOG_MAX_FILE_CHARS = 64,
+    LOG_CORE_CONTEXT_BUFFER_COUNT = 1,
+    LOG_THREAD_DEFAULT_BUFFER_MB = 1,
+};
 
 #pragma pack(1)
 typedef struct log_record_s {
-    uint64_t core;
+    uint16_t core;
+    uint8_t  opcode;
+    uint8_t  unused[5];
+
     pid_t    pid;
     pid_t    tid;
+
     uint64_t sec;
     uint64_t nsec;
-    uint64_t arg0;
-    uint64_t arg1;
-    uint64_t arg2;
-    uint64_t arg3;
+
+    union {
+        struct {
+            uint8_t  file_hash[SHA256_DIGEST_LENGTH];
+            uint64_t handle;
+            char     filename[LOG_MAX_FILE_CHARS];
+            uint32_t flags;
+            uint32_t unused_1;
+        } open;
+        struct {
+            uint8_t  file_hash[SHA256_DIGEST_LENGTH];
+            uint64_t handle;
+            uint64_t offset;
+            uint64_t length;
+        } rw;
+        struct {
+            uint8_t  file_hash[SHA256_DIGEST_LENGTH];
+            uint64_t handle;
+            uint64_t arg0;
+            uint64_t arg1;
+            uint64_t arg2;
+            uint64_t arg3;
+        } generic;
+    }
+    data;
 } log_record_t;
 #pragma pack()
 
@@ -46,10 +80,6 @@ typedef struct log_buffer_header_s {
 } log_buffer_header_t;
 
 #define LOG_MAGIC 0x1111111122222222L
-enum {
-    LOG_CORE_CONTEXT_BUFFER_COUNT = 1,
-    LOG_THREAD_DEFAULT_BUFFER_MB = 1,
-};
 #define LOG_RECORDS_PER_MB \
  ((1024 * 1024) / sizeof(log_record_t) )
 
@@ -101,6 +131,7 @@ typedef struct log_thread_s {
     pthread_t           thread;
     long                cores;
     log_context_t      *core_context;
+    char                log_path[PATH_MAX];
 } log_service_t;
 
 /* A debug record for debug tracing. */
@@ -120,11 +151,17 @@ void log_context_start_flush(log_context_t *context);
 bool log_context_is_flag_set(log_context_t *context, log_context_flags_t flags);
 bool log_header_check_magic(log_buffer_header_t *header);
 
+log_service_t *log_get_service(void);
+bool log_service_flag_is_set(log_service_flags_t flags);
+void log_service_flag_set(log_service_flags_t flags);
+void log_service_flag_clear(log_service_flags_t flags);
+char *log_service_get_log_path(void);
 void log_service_lock(void);
 void log_service_unlock(void);
 void log_thread_signal(void);
 
-#ifdef LOG_DEBUG_ENA
+#define LOG_DEBUG 1
+#if LOG_DEBUG
 void debug_trace(const char *__restrict __fmt, ...);
 #else
 #define debug_trace(...) ((void)0)

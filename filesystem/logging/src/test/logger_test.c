@@ -26,21 +26,34 @@
 #include "../lib/logger.h"
 #include "../lib/log_service_local.h"
 
-
+void wait_for_flush(void)
+{
+    while (logger_is_flush_needed()) {
+        printf("Waiting for flush of log\n");
+        sleep(1);
+    }
+}
 void logger_test(void)
 {
     const uint32_t messages = 40;
     uint32_t i;
-    uint64_t val = 0x1234567801234567;
+    uint64_t val = 1;
 
     logger_init();
 
+    uint64_t offset = 0;
+    uint64_t len = 1024;
     for (i = 0; i < messages; i++) {
-        logger_record("Test Message %lx %lx %lx %lx %lx %lx %lx %lx\n",
-                      i, val + 1, val + 2, val + 3);
+        uint64_t handle = 0x9876543200000000L | i;
+        logger_record_open("filename.txt", 0x1234 | i, handle);
+        logger_record_rw(LOG_OPCODE_WRITE, handle, "filename.txt", offset, len);
+        logger_record_rw(LOG_OPCODE_READ, handle, "filename.txt", offset, len);
+        logger_record_generic(LOG_OPCODE_FLUSH, "foo", 99,
+                              i, val + 1, val + 2, val + 3);
     }
 
     logger_flush();
+    wait_for_flush();
 }
 
 typedef struct test_param_s {
@@ -68,8 +81,8 @@ static void *logger_test_thread(void *param)
             printf("[%u] thread %u messages\n", params->thread, i);
         }
 
-        logger_record("Test Message %lx %lx %lx %lx %lx %lx %lx %lx\n",
-                      params->thread, i, 2, 3);
+        logger_record_generic(LOG_OPCODE_FLUSH, "foo", params->thread,
+                                params->thread, i, 2, 3);
     }
     printf("test thread %u done\n", params->thread);
     return NULL;
@@ -96,10 +109,7 @@ void logger_thread_test(uint32_t threads, uint64_t messages, uint32_t affine_gro
     }
     
     logger_flush();
-    while (logger_is_flush_needed()) {
-        printf("Waiting for flush of log\n");
-        sleep(1);
-    }
+    wait_for_flush();
     printf("Logger thread test done. threads:%u messages: %lu\n", threads, messages);
     // logger_destroy();
 }

@@ -1,5 +1,5 @@
 TARGET = fuse_pass_thru
-LIBS = -lm `pkg-config fuse3 --cflags --libs`
+LIBS = -lm `pkg-config fuse3 --cflags --libs` -L../../logging/src -l:logging.a -lcrypto 
 CC = gcc
 CFLAGS = -g -Wall -ggdb 
 

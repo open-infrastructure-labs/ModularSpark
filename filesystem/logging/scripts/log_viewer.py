@@ -27,14 +27,83 @@ from pyfiglet import Figlet
 
 from ctypes import *
 
-class LogRecord(Structure):
+class LogOpcode(Structure):
+    _pack = 1
     _fields_ = [
-        ("core", c_uint64),
+        ("opcode", c_uint8)
+    ]
+    opcode_to_str = {
+        0 : "invalid",
+        
+    }
+    def __str__(self):
+        return opcode_to_str[self.opcode]
+
+class FileHash(Structure):fields_
+    _pack = 1
+    _fields_ = [
+        ("file_hash", c_uint8 * 32)
+    ]
+    def __str__(self):
+        return "".join(map(str, self.file_hash))
+
+class LogRecordOpen(Structure):
+    _pack = 1
+    _fields_ = [
+        ("file_hash", FileHash),
+        ("file_handle", c_uint64),
+        ("file_name", c_char * 64),
+        ("flags", c_uint32),
+        ("unused", c_uint32),
+    ]
+    def __str__(self):
+        return f"{self.file_hash} {self.file_handle:016x} " + \
+               f'{self.file_name.decode()} ' + \
+               f"{self.flags:08x} "
+
+class LogRecordRW(Structure):
+    _pack = 1
+    _fields_ = [
+        ("file_hash", FileHash),
+        ("file_handle", c_uint64),
+        ("offset", c_uint64),
+        ("length", c_uint64),
+    ]
+    def __str__(self):
+        return f"{self.file_hash} {self.file_handle:016x} " + \
+               f"{self.offset:016x} {self.length:016x}"
+
+class LogRecordGeneric(Structure):
+    _pack = 1
+    _fields_ = [
+        ("file_hash", FileHash),
+        ("file_handle", c_uint64),
+        ("arg", c_uint64 * 4),
+    ]
+    def __str__(self):
+        return f"{self.file_hash} {self.file_handle:016x}" + \
+               f"{self.arg[0]:016x} {self.arg[1]:016x} " + \
+               f"{self.arg[2]:016x} {self.arg[3]:016x}"
+
+class LogDataUnion(Union):
+    _pack = 1
+    _fields_ = [
+        ("generic", LogRecordGeneric),
+        ("open", LogRecordOpen),
+        ("rw", LogRecordRW),
+    ]
+
+class LogRecord(Structure):
+    _pack = 1
+    _fields_ = [
+        ("core", c_uint16),
+        ("opcode", c_uint8),
+        ("unused", c_uint8 * 5),
         ("pid", c_uint32),
         ("tid", c_uint32),
         ("sec", c_uint64),
         ("nsec", c_uint64),
-        ("arg", c_uint64 * 4),
+        ("data", LogDataUnion),
     ]
     def time_string(self):
         ts = time.gmtime(self.sec)
@@ -52,8 +121,15 @@ class LogRecord(Structure):
 
     def __str__(self):
         ts = self.time_string()
-        return f"{ts} {self.core:02d} {self.pid:x} {self.tid:x} {self.arg[0]:016x} {self.arg[1]:016x} " + \
-               f"{self.arg[2]:016x} {self.arg[3]:016x}"
+        head = f"{ts} {self.core:02d} {self.pid:x} {self.tid:x} {opcode_to_str(self.opcode)} "
+        data = ""
+        if self.opcode == 13: # Open
+            data = str(self.data.open)
+        elif self.opcode in [14, 15, 32, 33]: # read/write/fallocate/lseek
+            data = str(self.data.rw)
+        else:
+            data = str(self.data.generic)
+        return head + data
 
 class LogViewer:
     """Application for viewing logs.."""
@@ -127,6 +203,7 @@ class LogViewer:
                 for i in range(0, batch_size):
                     rec = LogRecord()
                     byte_count = fd.readinto(rec)
+                    print(rec)
                     if byte_count != sizeof(LogRecord):
                         completed_cores.append(core)
                         break

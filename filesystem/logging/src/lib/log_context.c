@@ -17,6 +17,7 @@
 #define _GNU_SOURCE // For sched.h (sched_getcpu())
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "log_service_local.h"
 
 
@@ -105,8 +106,8 @@ log_record_t * log_context_get_record(log_context_t *context)
 }
 void log_context_open_file(log_context_t *context)
 {
-    char filename[60];
-    sprintf(filename, "log_core_%u.bin", context->core_id);
+    char filename[PATH_MAX];
+    sprintf(filename, "%s/log_core_%u.bin", log_service_get_log_path(), context->core_id);
     context->file = fopen(filename, "w");
 
     if (context->file == NULL) {

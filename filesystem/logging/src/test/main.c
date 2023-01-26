@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 {
     queue_test();
 
-    logger_thread_tests();
+    logger_test();
+    // logger_thread_tests();
     return 0;
 }

@@ -37,6 +37,7 @@
 #include <sys/xattr.h>
 #include <dirent.h>
 #include <malloc.h>
+#include "../../logging/src/lib/logger.h"
 
 
 typedef struct fuse_adapter_options_s {
@@ -94,6 +95,9 @@ static int fuse_adapter_getattr(const char *path, struct stat *stbuf,
         stbuf->st_uid = attr.st_uid;
     }
     free(new_path);
+    logger_record_generic(LOG_OPCODE_GETATTR, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return res;
 }
 
@@ -101,6 +105,9 @@ static int fuse_adapter_readlink(const char *path, char *buffer, size_t size)
 {
     char *new_path = alloc_new_path(path);
 	int err;
+    logger_record_generic(LOG_OPCODE_READLINK, path,  
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 
 	err = readlink(new_path, buffer, size - 1);
     free(new_path);
@@ -118,6 +125,9 @@ static int fuse_adapter_mknod(const char *path, mode_t mode, dev_t dev)
 {
     char *new_path = alloc_new_path(path);
 	int err;
+    logger_record_generic(LOG_OPCODE_MKNOD, path, 
+                          LOG_HANDLE_INVALID,
+                          mode, dev, 0, 0);
     
     err = mknod(new_path, mode, dev);
     free(new_path);
@@ -132,6 +142,9 @@ static int fuse_adapter_mkdir(const char *path, mode_t mode)
 {
     char *new_path = alloc_new_path(path);
     int err;
+    logger_record_generic(LOG_OPCODE_MKDIR, path, 
+                          LOG_HANDLE_INVALID,
+                          mode, 0, 0, 0);
     // mode |= 0700; /* Make sure user has execute permission.*/
 
     err = mkdir(new_path, mode);
@@ -146,6 +159,9 @@ static int fuse_adapter_mkdir(const char *path, mode_t mode)
 static int fuse_adapter_unlink(const char *path)
 {
     char *new_path = alloc_new_path(path);
+    logger_record_generic(LOG_OPCODE_UNLINK, path, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 
     if (unlink(new_path) == -1) {
         // error returned, change error returned to -errno errno
@@ -160,6 +176,9 @@ static int fuse_adapter_rmdir(const char *path)
 {
     char *new_path = alloc_new_path(path);
     int err;
+    logger_record_generic(LOG_OPCODE_RMDIR, path, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 
     err = rmdir(new_path);
     free(new_path);
@@ -175,8 +194,9 @@ static int fuse_adapter_symlink(const char *target, const char *linkpath)
     char *target_str = alloc_new_path(target);
     char *link_str = alloc_new_path(linkpath);
     int err;
-
-    printf("symlink: %s:%s\n", target_str, link_str);
+    logger_record_generic(LOG_OPCODE_SYMLINK, target, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
     err = symlink(target_str, link_str);
     free(target_str);
     free(link_str);
@@ -192,6 +212,9 @@ static int fuse_adapter_rename(const char *from, const char *to, unsigned int fl
     char *from_path = alloc_new_path(from);
     char *to_path = alloc_new_path(to);
     int err;
+    logger_record_generic(LOG_OPCODE_RENAME, from, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
     
 	if (flags) {
         free(from_path);
@@ -212,6 +235,9 @@ static int fuse_adapter_link(const char *from, const char *to)
     char *from_path = alloc_new_path(from);
     char *to_path = alloc_new_path(to);
     int err;
+    logger_record_generic(LOG_OPCODE_LINK, from, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
     
     err = link(from_path, to_path);
     free(from_path);
@@ -227,6 +253,9 @@ static int fuse_adapter_chmod(const char *path,
 		                      struct fuse_file_info *fi)
 {
     char *new_path = alloc_new_path(path);
+    logger_record_generic(LOG_OPCODE_CHMOD, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          mode, 0, 0, 0);
 
     if (chmod(new_path, mode) == -1) {
         // error returned, change error returned to -errno errno
@@ -242,6 +271,9 @@ static int fuse_adapter_chown(const char *path,
 		                      struct fuse_file_info *fi)
 {
     char *new_path = alloc_new_path(path);
+    logger_record_generic(LOG_OPCODE_CHOWN, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          uid, gid, 0, 0);
 
     int err = lchown(new_path, uid, gid);
     
@@ -262,7 +294,9 @@ static int fuse_adapter_truncate(const char *path,
 {
     int err;
     char *new_path = NULL;
-    printf("truncate: %s %lu %ld\n", path, fi->fh, size);
+    logger_record_generic(LOG_OPCODE_CHOWN, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          size, 0, 0, 0);
     if (fi != NULL && fi->fh != 0) {
 	    err = ftruncate(fi->fh, size);
     } else {
@@ -290,6 +324,7 @@ static int fuse_adapter_open(const char *path, struct fuse_file_info *fi)
     }
     fi->fh = err;
     free(new_path);
+    logger_record_open(path, fi->flags, fi->fh);
 	return 0;
 }
 
@@ -318,6 +353,7 @@ static int fuse_adapter_read(const char *path, char *buf, size_t size, off_t off
     if (path != NULL) {
         close(fd);
     }
+    logger_record_rw(LOG_OPCODE_READ, fd, path, off, size);
 	return bytes;
 }
 
@@ -346,6 +382,7 @@ static int fuse_adapter_write(const char *path, const char *buf, size_t size, of
     if (path != NULL) {
         close(fd);
     }
+    logger_record_rw(LOG_OPCODE_READ, fd, path, off, size);
 	return bytes;
 }
 
@@ -359,6 +396,7 @@ static int fuse_adapter_statfs(const char *path, struct statvfs *stat)
         return -errno;
     }
     free(new_path);
+    logger_record_generic(LOG_OPCODE_STATFS, path, 0, 0, 0, 0, 0);
 	return 0;
 }
 
@@ -367,6 +405,9 @@ static int fuse_adapter_flush(const char *path, struct fuse_file_info *fi)
     /* Nothing to do here. */
 	(void) path;
 	(void) fi;
+    logger_record_generic(LOG_OPCODE_FLUSH, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return 0;
 }
 
@@ -375,6 +416,9 @@ static int fuse_adapter_release(const char *path, struct fuse_file_info *fi)
     /* Nothing to do here. */
 	(void) path;
 	close(fi->fh);
+    logger_record_generic(LOG_OPCODE_RELEASE, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return 0;
 }
 
@@ -385,6 +429,9 @@ static int fuse_adapter_fsync(const char *path, int data,
 	(void) path;
 	(void) data;
 	(void) fi;
+    logger_record_generic(LOG_OPCODE_FSYNC, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return 0;
 }
 
@@ -413,7 +460,9 @@ static int fuse_adapter_setxattr(const char *path, const char *name,
     char *new_path = alloc_new_path(path);
 
     int err = lsetxattr(new_path, name, value, size, flags);
-    printf("fuse setxattr %s: %s err: %d\n", new_path, name, err);
+    logger_record_generic(LOG_OPCODE_SETXATTR, path, 
+                          LOG_HANDLE_INVALID,
+                          size, flags, 0, 0);
     free(new_path);
     if (err == -1) {
         err = -errno;
@@ -425,7 +474,9 @@ static int fuse_adapter_getxattr(const char *path, const char *name,
                                  char *value, long unsigned int size) 
 {
     char *new_path = alloc_new_path(path);
-    printf("getxattrr: %s: %s\n", new_path, name);
+    logger_record_generic(LOG_OPCODE_GETXATTR, path, 
+                          LOG_HANDLE_INVALID,
+                          size, 0, 0, 0);
     int err = lgetxattr(new_path, name, value, size);
     free(new_path);
     printf("err: %d\n", err);
@@ -438,6 +489,9 @@ static int fuse_adapter_getxattr(const char *path, const char *name,
 static int fuse_adapter_listxattr(const char *path, char *list, size_t size) 
 {
     char *new_path = alloc_new_path(path);
+    logger_record_generic(LOG_OPCODE_LISTXATTR, path, 
+                          LOG_HANDLE_INVALID,
+                          size, 0, 0, 0);
 
     int err = llistxattr(new_path, list, size);
     printf("listxattr %s err: %d\n", new_path, err);
@@ -454,6 +508,9 @@ static int fuse_adapter_removexattr(const char *path, const char *name)
     char str[80];
     strcpy(str, fuse_adapter_options.path);
     strcat(str, path);
+    logger_record_generic(LOG_OPCODE_REMOVEXATTR, path, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 
     int err = lremovexattr(new_path, name);
     printf("removexxattr %s err: %d\n", new_path, err);
@@ -495,6 +552,9 @@ static int fuse_adapter_readdir(const char *path, void *buf, fuse_fill_dir_t fil
         }
 	}
 	closedir(ds);
+    logger_record_generic(LOG_OPCODE_READDIR, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return 0;
 }
 
@@ -503,6 +563,9 @@ static int fuse_adapter_releasedir(const char *path, struct fuse_file_info *fi)
     (void) path;
     (void) fi;
     /* Nothing to do. */
+    logger_record_generic(LOG_OPCODE_RELEASEDIR, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
     return 0;
 }
 
@@ -513,6 +576,9 @@ static int fuse_adapter_fsyncdir(const char *path,
     (void) path;
     (void) fi;
     /* Nothing to do. */
+    logger_record_generic(LOG_OPCODE_FSYNCDIR, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
     return 0;
 }
 
@@ -522,12 +588,18 @@ static void * fuse_adapter_init(struct fuse_conn_info *conn,
 	(void) conn;
 	(void) cfg;
     // cfg->kernel_cache = 1;
+    logger_record_generic(LOG_OPCODE_INIT, NULL, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	return NULL;
 }
 
 static void fuse_adapter_destroy(void *private_data)
 {
 	(void) private_data;
+    logger_record_generic(LOG_OPCODE_DESTROY, NULL, 
+                          LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 }
 
 static int fuse_adapter_access(const char *path, int flags) 
@@ -535,7 +607,6 @@ static int fuse_adapter_access(const char *path, int flags)
     char *new_path = alloc_new_path(path);
 
     int err = access(new_path, flags);
-    printf("access %s flags: 0x%x err: %d\n", new_path, flags, err);
     free(new_path);
     if (err == -1) {
         err = -errno;
@@ -548,10 +619,11 @@ static int fuse_adapter_create(const char *path,
 		                       struct fuse_file_info *fi) 
 {
     char *new_path = alloc_new_path(path);
+    logger_record_generic(LOG_OPCODE_CREATE, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          mode, 0, 0, 0);
 
     int err = open(new_path, fi->flags, mode);
-    printf("open %s fi->flags: 0x%x mode: %d err: %d\n",
-            new_path, fi->flags, mode, err);
     free(new_path);
     if (err == -1) {
         err = -errno;
@@ -568,6 +640,9 @@ static int fuse_adapter_utimens(const char *path,
 	(void) fi;
     char *new_path = alloc_new_path(path);
 	int err;
+    logger_record_generic(LOG_OPCODE_UTIMENS, path, 
+                          (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                          0, 0, 0, 0);
 	
 	err = utimensat(0, new_path, ts, AT_SYMLINK_NOFOLLOW);
     free(new_path);
@@ -586,6 +661,9 @@ static int fuse_adapter_fallocate(const char *path,
     int fd;
 	size_t err;
     char *new_path = NULL;
+    logger_record_rw(LOG_OPCODE_FALLOCATE,
+                     (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                     path, off, len);
 
     if (path != NULL) {
         new_path = alloc_new_path(path);
@@ -614,6 +692,9 @@ static off_t fuse_adapter_lseek(const char *path,
     int fd;
 	size_t err;
     char *new_path = NULL;
+    logger_record_rw(LOG_OPCODE_LSEEK,
+                     (fi != NULL) ? fi->fh : LOG_HANDLE_INVALID,
+                     path, off, from);
 
     if (path != NULL) {
         new_path = alloc_new_path(path);
@@ -682,11 +763,12 @@ static const struct fuse_operations fuse_adapter_ops = {
     // .copy_file_range = fuse_adapter_copy_file_range,
     .lseek      = fuse_adapter_lseek,
 };
-
 int main(int argc, char *argv[])
 {
-	int ret;
+	int ret = 0;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+    
+    logger_init();
 
     /* This is required so that the fuse_opt_parse below can free on error. */
 	fuse_adapter_options.path = strdup("");
@@ -706,6 +788,6 @@ int main(int argc, char *argv[])
 	}
 
 	ret = fuse_main(args.argc, args.argv, &fuse_adapter_ops, NULL);
-	fuse_opt_free_args(&args);
+    fuse_opt_free_args(&args);
 	return ret;
 }
