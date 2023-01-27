@@ -19,6 +19,7 @@
 #include <stdlib.h> // for malloc/free
 #include <stdarg.h>
 #include <unistd.h> // for gettid(), getpid()
+#include <string.h>
 #include "log_service_local.h"
 
 static log_service_t log_service;
@@ -62,9 +63,12 @@ void log_service_unlock(void)
     pthread_mutex_unlock(&log_service.mutex);
 }
 
-void logger_init(void)
+void logger_init(const char *log_path)
 {
-    printf("Logging initialized\n");
+    if (log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
+        return;
+    }
+    printf("logging service initialize\n");
     log_service.cores = sysconf(_SC_NPROCESSORS_ONLN);
     log_service.core_context = (log_context_t*)malloc(log_service.cores * sizeof(log_context_t));
     if (log_service.core_context == NULL) {
@@ -79,12 +83,22 @@ void logger_init(void)
     pthread_mutex_init(&log_service.mutex, NULL);
     pthread_cond_init(&log_service.cond, NULL);
     pthread_create(&log_service.thread, NULL, log_thread, &log_service);
-    getcwd(log_service_get_log_path(), PATH_MAX);
+
+    if (log_path != NULL && strlen(log_path) != 0) {
+        // Use user supplied path. 
+        strncpy(log_service_get_log_path(), log_path, strlen(log_path));
+    } else {
+        // Use the current path for files.
+        getcwd(log_service_get_log_path(), PATH_MAX);
+    }
+    printf("Logging path is: %s\n",log_service_get_log_path());
 }
 
 // Thread for flushing traces to file in the background.
 static void *log_thread(void *unused)
 {
+    struct timespec ts;
+    struct timespec last_run_ts;
     printf("log_service starting\n");
     while (!log_service_flag_is_set(LOG_SERVICE_FLAGS_HALT)) {
         log_service_lock();
@@ -108,8 +122,16 @@ static void *log_thread(void *unused)
             }
             log_context_unlock(context);
         }
-        pthread_cond_wait(&log_service.cond, &log_service.mutex);
+        clock_gettime(CLOCK_REALTIME, &ts);
+        last_run_ts = ts;
+        ts.tv_sec += LOG_FLUSH_WAIT_SEC;
+        pthread_cond_timedwait(&log_service.cond, &log_service.mutex, &ts);
+        // pthread_cond_wait(&log_service.cond, &log_service.mutex);
         log_service_unlock();
+        clock_gettime(CLOCK_REALTIME, &ts);
+        if ((ts.tv_sec - last_run_ts.tv_sec) >= LOG_FLUSH_WAIT_SEC) {
+            logger_flush();
+        }
     }
     printf("log_service exiting\n");
     return NULL;
@@ -129,7 +151,8 @@ bool logger_is_flush_needed(void)
     for (core_id = 0; core_id < log_service.cores; core_id++){
         context = log_get_context(core_id);
         log_context_lock(context);
-        if (!queue_is_empty(&context->flush_buffer_queue)) {
+        if (!queue_is_empty(&context->flush_buffer_queue) ||
+            (context->traces_remaining != LOG_RECORDS_PER_BUFFER)) {
             needed = true;
             log_context_unlock(context);
             break;

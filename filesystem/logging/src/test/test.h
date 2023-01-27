@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 void queue_test(void);
-void logger_test(void);
+void logger_test(bool flush);
 void logger_thread_tests(void);
 
 #endif

@@ -1,4 +1,4 @@
-LIBS = -lm -lpthread -lcrypto
+LIBS = -lm -lpthread -l:crypto
 
 CC = gcc
 CFLAGS = -g -Wall -O0 -I./include

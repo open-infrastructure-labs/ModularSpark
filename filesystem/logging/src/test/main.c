@@ -18,13 +18,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "test.h"
 
 int main(int argc, char *argv[])
 {
     queue_test();
 
-    logger_test();
+    logger_test(false /* no flush*/);
+    logger_test(true /* yes flush*/);
     // logger_thread_tests();
     return 0;
 }

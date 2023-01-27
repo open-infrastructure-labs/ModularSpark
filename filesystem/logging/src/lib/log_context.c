@@ -106,12 +106,14 @@ log_record_t * log_context_get_record(log_context_t *context)
 }
 void log_context_open_file(log_context_t *context)
 {
-    char filename[PATH_MAX];
-    sprintf(filename, "%s/log_core_%u.bin", log_service_get_log_path(), context->core_id);
-    context->file = fopen(filename, "w");
-
     if (context->file == NULL) {
-        fprintf(stderr, "failed to open file: %s\n", filename);
+        char filename[PATH_MAX];
+        sprintf(filename, "%s/log_core_%u.bin", log_service_get_log_path(), context->core_id);
+        context->file = fopen(filename, "w");
+
+        if (context->file == NULL) {
+            fprintf(stderr, "failed to open file: %s\n", filename);
+        }
     }
 }
 
@@ -149,8 +151,10 @@ void log_flush_context(log_context_t *context)
 {
     queue_node_t *node = NULL;
 
+    log_context_open_file(context);
     if (context->file == NULL) {
-        log_context_open_file(context);
+        fprintf(stderr, "Cannot flush, unable to open file\n");
+        return;
     }
     
     while ((node = queue_pop(&context->flush_buffer_queue)) != NULL) {

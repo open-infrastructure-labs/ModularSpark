@@ -28,6 +28,7 @@
 #include "queue.h"
 
 enum {
+    LOG_FLUSH_WAIT_SEC = 2,
     LOG_MAX_FILE_CHARS = 64,
     LOG_CORE_CONTEXT_BUFFER_COUNT = 1,
     LOG_THREAD_DEFAULT_BUFFER_MB = 1,
@@ -99,7 +100,7 @@ typedef enum log_context_flags_s {
 } log_context_flags_t;
 
 typedef struct log_context_s {
-    queue_node_t node;
+    queue_node_t        node;
     uint32_t            core_id;
     log_context_flags_t flags;
     pthread_mutex_t     mutex;
@@ -116,7 +117,7 @@ typedef struct log_context_s {
     uint32_t             traces_remaining;
 
     FILE                *file;
-} log_context_t;
+} log_context_t; 
 
 typedef enum log_service_flags_s {
     LOG_SERVICE_FLAGS_INVALID = 0x0000,
@@ -160,7 +161,9 @@ void log_service_lock(void);
 void log_service_unlock(void);
 void log_thread_signal(void);
 
-#define LOG_DEBUG 1
+// Uncomment the below for verbose tracing.
+// #define LOG_DEBUG 1
+#define LOG_DEBUG 0
 #if LOG_DEBUG
 void debug_trace(const char *__restrict __fmt, ...);
 #else
