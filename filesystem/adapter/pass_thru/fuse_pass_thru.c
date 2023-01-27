@@ -42,6 +42,7 @@
 
 typedef struct fuse_adapter_options_s {
   const char *path; /* Path to our remote. */
+  const char *log_path; /* Path to logs. */
   int help; /* Set if help display is requested. */  
 } fuse_adapter_options_t;
 
@@ -51,6 +52,7 @@ typedef struct fuse_opt fuse_opt_t;
 
 static fuse_opt_t fuse_adapter_options_spec[] = {
   {"--path=%s", offsetof(fuse_adapter_options_t, path), 1 },
+  {"--log_path=%s", offsetof(fuse_adapter_options_t, log_path), 1 },
   {"--help", offsetof(fuse_adapter_options_t, help), 1 },
 };
 
@@ -360,8 +362,9 @@ static int fuse_adapter_read(const char *path, char *buf, size_t size, off_t off
 static int fuse_adapter_write(const char *path, const char *buf, size_t size, off_t off,
 		                      struct fuse_file_info *fi)
 {   
-    int fd;
+    int fd = 0;
 	size_t bytes;
+#if 1
 
     if (path != NULL) {
         char *new_path = alloc_new_path(path);
@@ -382,7 +385,10 @@ static int fuse_adapter_write(const char *path, const char *buf, size_t size, of
     if (path != NULL) {
         close(fd);
     }
-    logger_record_rw(LOG_OPCODE_READ, fd, path, off, size);
+#else
+    bytes = size;
+#endif    
+    logger_record_rw(LOG_OPCODE_WRITE, fd, path, off, size);
 	return bytes;
 }
 
@@ -465,6 +471,7 @@ static int fuse_adapter_setxattr(const char *path, const char *name,
                           size, flags, 0, 0);
     free(new_path);
     if (err == -1) {
+        printf("setxattr: path: %s name: %s err: %d\n", path, name, -errno);
         err = -errno;
     }
     return err;
@@ -477,13 +484,16 @@ static int fuse_adapter_getxattr(const char *path, const char *name,
     logger_record_generic(LOG_OPCODE_GETXATTR, path, 
                           LOG_HANDLE_INVALID,
                           size, 0, 0, 0);
+#if 1                        
     int err = lgetxattr(new_path, name, value, size);
     free(new_path);
-    printf("err: %d\n", err);
     if (err == -1) {
+        // printf("getxattr: path: %s name: %s err: %d\n", path, name, -errno);
         err = -errno;
     }
     return err;
+#endif
+    return 0;
 }
 
 static int fuse_adapter_listxattr(const char *path, char *list, size_t size) 
@@ -494,9 +504,9 @@ static int fuse_adapter_listxattr(const char *path, char *list, size_t size)
                           size, 0, 0, 0);
 
     int err = llistxattr(new_path, list, size);
-    printf("listxattr %s err: %d\n", new_path, err);
     free(new_path);
     if (err == -1) {
+        printf("listxattr %s err: %d\n", new_path, errno);
         err = -errno;
     }
     return err;
@@ -513,9 +523,9 @@ static int fuse_adapter_removexattr(const char *path, const char *name)
                           0, 0, 0, 0);
 
     int err = lremovexattr(new_path, name);
-    printf("removexxattr %s err: %d\n", new_path, err);
     free(new_path);
     if (err == -1) {
+        printf("removexxattr %s err: %d\n", new_path, errno);
         err = -errno;
     }
     return err;
@@ -768,10 +778,9 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    // logger_init();
-
     /* This is required so that the fuse_opt_parse below can free on error. */
 	fuse_adapter_options.path = strdup("");
+	fuse_adapter_options.log_path = strdup("");
 
 	if (fuse_opt_parse(&args,
                        &fuse_adapter_options,
@@ -782,10 +791,15 @@ int main(int argc, char *argv[])
 
 	/* With --help, print our help, followed by standard fuse help. */
 	if (fuse_adapter_options.help) {
-		printf("%s: [--path=device] [--help]\n", argv[0]);
+		printf("%s: [--path=device] [--help] [--log_path=path] \n", argv[0]);
 		fuse_opt_add_arg(&args, "--help");
 		args.argv[0][0] = '\0';
 	}
+
+    /* Only init logging if the --log_path provided. */
+    if (strlen(fuse_adapter_options.log_path) != 0) {
+        logger_init(fuse_adapter_options.log_path);
+    }
 
 	ret = fuse_main(args.argc, args.argv, &fuse_adapter_ops, NULL);
     fuse_opt_free_args(&args);
