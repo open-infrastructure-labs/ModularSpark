@@ -13,8 +13,9 @@ chmod a+rwx fuse_mount
 
 # Inside docker:
 cd /R23/filesystem/adapter/pass_thru
-# ./fuse_pass_thru --path=/R23/filesystem/adapter/pass_thru/fuse_data/ -d -f /R23/filesystem/adapter/pass_thru/fuse_mount
-./fuse_pass_thru --path=/R23/filesystem/adapter/pass_thru/fuse_data/  /R23/filesystem/adapter/pass_thru/fuse_mount
+./fuse_pass_thru --path=/R23/filesystem/adapter/pass_thru/fuse_data/ -d -f /R23/filesystem/adapter/pass_thru/fuse_mount
+
+# ./fuse_pass_thru --path=/R23/filesystem/adapter/pass_thru/fuse_data/  /R23/filesystem/adapter/pass_thru/fuse_mount
 
 mount | grep fuse_pass_thru
 
