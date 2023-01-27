@@ -37,7 +37,28 @@
 #include <sys/xattr.h>
 #include <dirent.h>
 #include <malloc.h>
+
 #include "../../logging/src/lib/logger.h"
+
+#define DISABLE_LOGGER 1
+#ifdef DISABLE_LOGGER
+void logger_init(void){}
+void logger_record_generic(log_opcode_t op,
+                           const char *filename,
+                           uint64_t handle,
+                           unsigned long arg0, unsigned long arg1, unsigned long arg2, unsigned long arg3){}
+
+void logger_record_open(const char *filename,
+                        uint32_t flags,
+                        uint64_t handle){}
+
+void logger_record_rw(log_opcode_t op,
+                      uint64_t handle,
+                      const char *filename,
+                      uint64_t offset,
+                      uint64_t length){}
+
+#endif
 
 
 typedef struct fuse_adapter_options_s {

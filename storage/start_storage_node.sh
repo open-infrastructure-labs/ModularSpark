@@ -97,9 +97,15 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -e USER=${USER_NAME} \
   --network ${BASE_NETWORK_NAME} \
   --name ${BASE_STORAGE_CONTAINER_NAME}-${NODE_ID}  --hostname ${BASE_STORAGE_CONTAINER_NAME}-${NODE_ID} \
+  --device /dev/fuse \
+  --security-opt apparmor:unconfined \
+  --cap-add SYS_ADMIN \
   ${STORAGE_DOCKER_NAME} ${CMD}"
 
 # echo ${DOCKER_RUN}
+# https://docs.docker.com/engine/security/seccomp/
+# --security-opt seccomp=unconfined
+# --security-opt seccomp=docker/seccomp_profile.json
 
 if [ "$RUNNING_MODE" = "interactive" ]; then
   eval "${DOCKER_RUN}"
