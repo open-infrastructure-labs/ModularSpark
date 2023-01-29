@@ -24,6 +24,15 @@ mkdir -p $SERVER_DIR
 # sudo chown $USER:$USER $SERVER_DIR
 make install
 
+# Can be <prefix>{#-#,#,#-#,...}
+# Coma separated
+IOSERVERS="r23-1-storage-0"
+METASERVERS="r23-1-storage-0"
+$SERVER_DIR/bin/pvfs2-genconfig --quiet --protocol tcp --ioservers ${IOSERVERS} --metaservers ${METASERVERS} \
+--logfile /opt/volume/filesystem/orangefs/logs \
+--storage /opt/volume/filesystem/orangefs/data \
+$SERVER_DIR/etc/server.conf
+
 # Building orangefs_fuse
 # need libfuse-dev
 ./configure --prefix=$FUSE_DIR --disable-server --disable-usrint --disable-opt --enable-fuse --with-db-backend=lmdb

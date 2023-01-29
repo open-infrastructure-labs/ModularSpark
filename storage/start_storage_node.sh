@@ -74,6 +74,8 @@ rm -f ${NODE_PATH}/status/*
 # Can be used to transfer data to HDFS
 mkdir -p ${STORAGE_DIR}/data
 
+# Create filesystem mount point
+mkdir -p ${NODE_PATH}/filesystem
 
 # We need to be absolutely sure that ssh configuration exists
 mkdir -p ${STORAGE_DIR}/volume/ssh
@@ -89,6 +91,7 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -v ${NODE_PATH}/metastore:/opt/volume/metastore \
   -v ${NODE_PATH}/status:/opt/volume/status \
   -v ${NODE_PATH}/logs:${HADOOP_HOME}/logs \
+  -v ${NODE_PATH}/filesystem:/opt/volume/filesystem \
   -v ${STORAGE_DIR}/hadoop_home/etc/hadoop/core-site-${DC}.xml:${HADOOP_HOME}/etc/hadoop/core-site.xml \
   -v ${STORAGE_DIR}/hadoop_home/etc/hadoop/hdfs-site.xml:${HADOOP_HOME}/etc/hadoop/hdfs-site.xml \
   -v ${STORAGE_DIR}/hive_home/conf/hive-site.xml:${HIVE_HOME}/conf/hive-site.xml \

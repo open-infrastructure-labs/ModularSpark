@@ -40,6 +40,13 @@ if [ ${NODE_ID} == "0" ]; then # Start stats_server on node 0 only
     popd
 fi 
 
+# Check if orangefs directory exists
+if [ ! -d /opt/volume/filesystem/orangefs ]; then
+    mkdir -p /opt/volume/filesystem/orangefs
+    mkdir -p /opt/volume/filesystem/orangefs/data
+    mkdir -p /opt/volume/filesystem/orangefs/logs
+fi
+
 echo "HADOOP_READY"
 echo "HADOOP_READY" > /opt/volume/status/HADOOP_STATE
 
