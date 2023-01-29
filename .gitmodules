@@ -4,3 +4,6 @@
 [submodule "spark/spark"]
 	path = spark/spark
 	url = https://github.com/apache/spark.git
+[submodule "filesystem/pvfs2/orangefs"]
+	path = filesystem/pvfs2/orangefs
+	url = https://github.com/waltligon/orangefs.git
