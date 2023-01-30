@@ -21,14 +21,18 @@ if [ ! -d $ORANGEFS_PATH ]; then
     tar -xzf $ORANGEFS_TAR_PATH --directory $BUILD_DIR
 fi
 pushd $ORANGEFS_PATH
+# ./prepare command will generate ./configure script
+./prepare
+
 ./configure --prefix=$SERVER_DIR --with-db-backend=lmdb
 
-make -j 8
+# On a systems with large core count we may run our of memory
+make -j$((`nproc`/2))
 
-sudo mkdir $SERVER_DIR
-sudo chown $USER:$USER $SERVER_DIR
+mkdir -p $SERVER_DIR
+# sudo chown $USER:$USER $SERVER_DIR
 make install
 
 # Generate the configuration file for the server.
-$SERVER_DIR/bin/pvfs2-genconfig -q --protocol tcp --ioservers r23-1-storage-dc1 --metaservers r23-1-storage-dc1 $SERVER_DIR/etc/orangefs-server.conf
+$SERVER_DIR/bin/pvfs2-genconfig -q --protocol tcp --ioservers r23-1-storage-0 --metaservers r23-1-storage-0 $SERVER_DIR/etc/orangefs-server.conf
 
