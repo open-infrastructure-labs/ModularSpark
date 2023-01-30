@@ -40,3 +40,8 @@ $SERVER_DIR/etc/server.conf
 make -j$((`nproc`/2))
 
 make install
+
+# We also need to create pvfs2tab file (potentially separate for each client :) )
+# It may be possible to  set the PVFS2TAB_FILE environment variable to the desired path.
+echo "tcp://r23-1-storage-0:3334/orangefs /mnt/orangefs_fuse pvfs2 defaults,noauto 0 0" > $FUSE_DIR/pvfs2tab
+chmod a+r $FUSE_DIR/pvfs2tab

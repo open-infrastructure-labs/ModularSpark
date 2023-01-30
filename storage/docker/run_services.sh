@@ -40,12 +40,36 @@ if [ ${NODE_ID} == "0" ]; then # Start stats_server on node 0 only
     popd
 fi 
 
+echo "Start OrangeFS server..."
+ORANGEFS_HOME=/R23/filesystem/pvfs2/orangefs_server
+
 # Check if orangefs directory exists
 if [ ! -d /opt/volume/filesystem/orangefs ]; then
     mkdir -p /opt/volume/filesystem/orangefs
     mkdir -p /opt/volume/filesystem/orangefs/data
     mkdir -p /opt/volume/filesystem/orangefs/logs
+    ${ORANGEFS_HOME}/sbin/pvfs2-server -f -a r23-1-storage-0 ${ORANGEFS_HOME}/etc/server.conf
 fi
+
+
+${ORANGEFS_HOME}/sbin/pvfs2-server -a r23-1-storage-0 ${ORANGEFS_HOME}/etc/server.conf
+
+
+# Code below will be relocated to worker dockers
+pushd /R23/filesystem/pvfs2/orangefs_fuse
+# check if pvfs2tab is present
+if [ -f ./pvfs2tab ] 
+then
+    echo "Mounting orangefs_fuse"
+    sudo mkdir -p /mnt/orangefs_fuse
+    sudo chown peter:peter /mnt/orangefs_fuse
+    ./bin/pvfs2fuse /mnt/orangefs_fuse
+    df -h /mnt/orangefs_fuse
+else
+    echo "Missing /R23/filesystem/pvfs2/orangefs_fuse/pvfs2tab"
+fi
+popd
+
 
 echo "HADOOP_READY"
 echo "HADOOP_READY" > /opt/volume/status/HADOOP_STATE
@@ -55,3 +79,9 @@ echo "RUNNING_MODE $RUNNING_MODE"
 if [ "$RUNNING_MODE" = "daemon" ]; then
     sleep infinity
 fi
+
+if mount | grep /mnt/orangefs_fuse; then 
+    echo "Unmounting orangefs_fuse"
+    fusermount -u /mnt/orangefs_fuse
+fi
+
