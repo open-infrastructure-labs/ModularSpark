@@ -11,6 +11,11 @@ pushd storage/docker
 ./build.sh
 popd
 
+pushd storage
+# Build orange fs, etc.
+./build.sh
+popd
+
 spark/docker/build.sh
 
 pushd spark
