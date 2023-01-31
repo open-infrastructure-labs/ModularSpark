@@ -7,13 +7,15 @@ source $ROOT_DIR/version
 
 STORAGE_DIR=${ROOT_DIR}/storage
 
-VALID_ARGS=$(getopt -o i: --longoptions node_id: -- "$@")
+VALID_ARGS=$(getopt -o i:,c: --longoptions node_id:,cmd: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
 DC=dc1 # residue from QFlock project Data Center 1
 NODE_ID=0 # set default node_id
+CMD="bin/run_services.sh" # set default command to run storage services
+RUNNING_MODE="daemon"
 
 eval set -- "$VALID_ARGS"
 while [ : ]; do  
@@ -23,6 +25,12 @@ while [ : ]; do
         NODE_ID=$2
         shift
         ;;
+    -c | --cmd)
+        echo "cmd = $2"
+        CMD=$2
+        RUNNING_MODE="interactive"
+        shift
+        ;;        
     --)
       break
       ;;
@@ -66,8 +74,8 @@ rm -f ${NODE_PATH}/status/*
 # Can be used to transfer data to HDFS
 mkdir -p ${STORAGE_DIR}/data
 
-CMD="bin/run_services.sh"
-RUNNING_MODE="daemon"
+# Create filesystem mount point
+mkdir -p ${NODE_PATH}/filesystem
 
 # We need to be absolutely sure that ssh configuration exists
 mkdir -p ${STORAGE_DIR}/volume/ssh
@@ -83,6 +91,7 @@ DOCKER_RUN="docker run --rm=true ${DOCKER_IT} \
   -v ${NODE_PATH}/metastore:/opt/volume/metastore \
   -v ${NODE_PATH}/status:/opt/volume/status \
   -v ${NODE_PATH}/logs:${HADOOP_HOME}/logs \
+  -v ${NODE_PATH}/filesystem:/opt/volume/filesystem \
   -v ${STORAGE_DIR}/hadoop_home/etc/hadoop/core-site-${DC}.xml:${HADOOP_HOME}/etc/hadoop/core-site.xml \
   -v ${STORAGE_DIR}/hadoop_home/etc/hadoop/hdfs-site.xml:${HADOOP_HOME}/etc/hadoop/hdfs-site.xml \
   -v ${STORAGE_DIR}/hive_home/conf/hive-site.xml:${HIVE_HOME}/conf/hive-site.xml \
