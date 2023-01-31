@@ -19,6 +19,7 @@
 #include <stdlib.h> // for malloc/free
 #include <stdarg.h>
 #include <unistd.h> // for gettid(), getpid()
+#include <string.h>
 #include "log_service_local.h"
 
 static log_service_t log_service;
@@ -62,9 +63,12 @@ void log_service_unlock(void)
     pthread_mutex_unlock(&log_service.mutex);
 }
 
-void logger_init(void)
+void logger_init(const char *log_path)
 {
-    printf("Logging initialized\n");
+    if (log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
+        return;
+    }
+    printf("logging service initialize\n");
     log_service.cores = sysconf(_SC_NPROCESSORS_ONLN);
     log_service.core_context = (log_context_t*)malloc(log_service.cores * sizeof(log_context_t));
     if (log_service.core_context == NULL) {
@@ -79,12 +83,28 @@ void logger_init(void)
     pthread_mutex_init(&log_service.mutex, NULL);
     pthread_cond_init(&log_service.cond, NULL);
     pthread_create(&log_service.thread, NULL, log_thread, &log_service);
-    getcwd(log_service_get_log_path(), PATH_MAX);
+
+    if (log_path != NULL && strlen(log_path) != 0) {
+        // Use user supplied path. 
+        strncpy(log_service_get_log_path(), log_path, strlen(log_path));
+    } else {
+        // Use the current path for files.
+        getcwd(log_service_get_log_path(), PATH_MAX);
+    }
+    printf("Logging path is: %s\n",log_service_get_log_path());
+#if LOG_DEBUG
+    strcpy(&log_service.debug_log_path[0], log_service_get_log_path());
+    strcat(&log_service.debug_log_path[0], "/log_debug_file.log");
+    pthread_mutex_init(&log_service.debug_log_mutex, NULL);
+    log_service.debug_file = fopen(&log_service.debug_log_path[0], "w");
+#endif
 }
 
 // Thread for flushing traces to file in the background.
 static void *log_thread(void *unused)
 {
+    struct timespec ts;
+    struct timespec last_run_ts;
     printf("log_service starting\n");
     while (!log_service_flag_is_set(LOG_SERVICE_FLAGS_HALT)) {
         log_service_lock();
@@ -108,8 +128,21 @@ static void *log_thread(void *unused)
             }
             log_context_unlock(context);
         }
-        pthread_cond_wait(&log_service.cond, &log_service.mutex);
+        clock_gettime(CLOCK_REALTIME, &ts);
+        last_run_ts = ts;
+        ts.tv_sec += LOG_FLUSH_WAIT_SEC;
+        pthread_cond_timedwait(&log_service.cond, &log_service.mutex, &ts);
+        // pthread_cond_wait(&log_service.cond, &log_service.mutex);
         log_service_unlock();
+        clock_gettime(CLOCK_REALTIME, &ts);
+        if ((ts.tv_sec - last_run_ts.tv_sec) >= LOG_FLUSH_WAIT_SEC) {
+            /* If we do a full wait without any wakeup, then check if we need to 
+             * flush the buffers.  In effect, this allows us to flush the buffers
+             * when we go idle.
+             */
+            debug_trace("Flush Timer expired.\n");
+            logger_flush_background();
+        }
     }
     printf("log_service exiting\n");
     return NULL;
@@ -129,7 +162,8 @@ bool logger_is_flush_needed(void)
     for (core_id = 0; core_id < log_service.cores; core_id++){
         context = log_get_context(core_id);
         log_context_lock(context);
-        if (!queue_is_empty(&context->flush_buffer_queue)) {
+        if (!queue_is_empty(&context->flush_buffer_queue) ||
+            (context->traces_remaining != LOG_RECORDS_PER_BUFFER)) {
             needed = true;
             log_context_unlock(context);
             break;
@@ -139,11 +173,18 @@ bool logger_is_flush_needed(void)
     return needed;
 }
 
+// A bg flush will flush out a partially full buffer,
+// as long as it is not the only one remaining.
+void logger_flush_background(void)
+{
+    uint32_t core_id;
+    for (core_id = 0; core_id < log_service.cores; core_id++) {
+        log_context_start_flush_bg(log_get_context(core_id));
+    }
+}
 // Flush out all the buffers that need it.
 void logger_flush(void)
 {
-    debug_trace("[%u] Flush started\n", sched_getcpu());
-
     uint32_t core_id;
     for (core_id = 0; core_id < log_service.cores; core_id++) {
         log_context_start_flush(log_get_context(core_id));
@@ -169,10 +210,15 @@ void debug_trace(const char* format, ...)
 #elif LOG_DEBUG
 void debug_trace(const char* format, ...)
 {
+    if (!log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
+        return;
+    }
+    pthread_mutex_lock(&log_service.debug_log_mutex);
     va_list argptr;
     va_start(argptr, format);
-    vfprintf(stderr, format, argptr);
+    vfprintf(log_service.debug_file, format, argptr);
     va_end(argptr);
-    fflush(stdin);
+    fflush(log_service.debug_file);
+    pthread_mutex_unlock(&log_service.debug_log_mutex);
 }
 #endif

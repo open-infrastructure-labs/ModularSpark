@@ -28,9 +28,10 @@
 #include "queue.h"
 
 enum {
+    LOG_FLUSH_WAIT_SEC = 2,
     LOG_MAX_FILE_CHARS = 64,
-    LOG_CORE_CONTEXT_BUFFER_COUNT = 1,
-    LOG_THREAD_DEFAULT_BUFFER_MB = 1,
+    LOG_CORE_CONTEXT_BUFFER_COUNT = 2,
+    LOG_THREAD_DEFAULT_BUFFER_MB = 10,
 };
 
 #pragma pack(1)
@@ -99,7 +100,7 @@ typedef enum log_context_flags_s {
 } log_context_flags_t;
 
 typedef struct log_context_s {
-    queue_node_t node;
+    queue_node_t        node;
     uint32_t            core_id;
     log_context_flags_t flags;
     pthread_mutex_t     mutex;
@@ -116,7 +117,7 @@ typedef struct log_context_s {
     uint32_t             traces_remaining;
 
     FILE                *file;
-} log_context_t;
+} log_context_t; 
 
 typedef enum log_service_flags_s {
     LOG_SERVICE_FLAGS_INVALID = 0x0000,
@@ -132,6 +133,9 @@ typedef struct log_thread_s {
     long                cores;
     log_context_t      *core_context;
     char                log_path[PATH_MAX];
+    pthread_mutex_t     debug_log_mutex;
+    char                debug_log_path[PATH_MAX];
+    FILE *              debug_file;
 } log_service_t;
 
 /* A debug record for debug tracing. */
@@ -147,7 +151,13 @@ void log_context_unlock(log_context_t *context);
 void log_context_init(log_context_t *context, uint32_t core_id);
 log_record_t * log_context_get_record(log_context_t *context);
 void log_flush_context(log_context_t *context);
+void log_context_start_flush_bg(log_context_t *context);
+
+
+
+bool log_context_allocate_buffer(log_context_t *context);
 void log_context_start_flush(log_context_t *context);
+void log_context_start_flush_bg(log_context_t *context);
 bool log_context_is_flag_set(log_context_t *context, log_context_flags_t flags);
 bool log_header_check_magic(log_buffer_header_t *header);
 
@@ -160,7 +170,9 @@ void log_service_lock(void);
 void log_service_unlock(void);
 void log_thread_signal(void);
 
-#define LOG_DEBUG 1
+// Uncomment the below for verbose tracing.
+// #define LOG_DEBUG 1
+#define LOG_DEBUG 0
 #if LOG_DEBUG
 void debug_trace(const char *__restrict __fmt, ...);
 #else

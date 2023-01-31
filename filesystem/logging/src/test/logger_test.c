@@ -33,14 +33,15 @@ void wait_for_flush(void)
         sleep(1);
     }
 }
-void logger_test(void)
+void logger_test(bool flush)
 {
-    const uint32_t messages = 40;
+    const uint32_t messages = 10;
     uint32_t i;
     uint64_t val = 1;
 
-    logger_init();
+    logger_init(NULL);
 
+    printf("Start logger_test flush %s\n", flush ? "yes" : "no");
     uint64_t offset = 0;
     uint64_t len = 1024;
     for (i = 0; i < messages; i++) {
@@ -52,8 +53,11 @@ void logger_test(void)
                               i, val + 1, val + 2, val + 3);
     }
 
-    logger_flush();
+    if (flush) {
+        logger_flush();
+    }
     wait_for_flush();
+    printf("Complete logger_test flush %s\n", flush ? "yes" : "no");
 }
 
 typedef struct test_param_s {
@@ -108,7 +112,6 @@ void logger_thread_test(uint32_t threads, uint64_t messages, uint32_t affine_gro
         printf("test %u done\n", i);
     }
     
-    logger_flush();
     wait_for_flush();
     printf("Logger thread test done. threads:%u messages: %lu\n", threads, messages);
     // logger_destroy();
@@ -132,7 +135,7 @@ void remove_log_files(void)
 
 void logger_thread_tests(void)
 {
-    logger_init();
+    logger_init(NULL);
 
     /* First fill all the buffers, plus a bit more to ensure we use all buffers. */
     remove_log_files();

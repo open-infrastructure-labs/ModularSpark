@@ -69,11 +69,11 @@ typedef enum log_opcode_e {
     LOG_OPCODE_FALLOCATE,
     LOG_OPCODE_LSEEK,
     
-    LOG_OPCODE_MAX
+    LOG_OPCODE_MAX,
     
 } log_opcode_t;
 
-void logger_init(void);
+void logger_init(const char *log_path);
 void logger_record_generic(log_opcode_t op,
                            const char *filename,
                            uint64_t handle,
@@ -87,5 +87,6 @@ void logger_record_rw(log_opcode_t op,
                       uint64_t offset,
                       uint64_t length);
 void logger_flush(void);
+void logger_flush_background(void);
 bool logger_is_flush_needed(void);
 #endif

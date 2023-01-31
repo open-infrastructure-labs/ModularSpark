@@ -27,6 +27,8 @@ from pyfiglet import Figlet
 
 from ctypes import *
 
+from opcodes import opcode_string
+
 class LogOpcode(Structure):
     _pack = 1
     _fields_ = [
@@ -34,12 +36,12 @@ class LogOpcode(Structure):
     ]
     opcode_to_str = {
         0 : "invalid",
-        
+
     }
     def __str__(self):
         return opcode_to_str[self.opcode]
 
-class FileHash(Structure):fields_
+class FileHash(Structure):
     _pack = 1
     _fields_ = [
         ("file_hash", c_uint8 * 32)
@@ -121,7 +123,7 @@ class LogRecord(Structure):
 
     def __str__(self):
         ts = self.time_string()
-        head = f"{ts} {self.core:02d} {self.pid:x} {self.tid:x} {opcode_to_str(self.opcode)} "
+        head = f"{ts} {self.core:02d} {self.pid:x} {self.tid:x} {self.opcode} {opcode_string[self.opcode]} "
         data = ""
         if self.opcode == 13: # Open
             data = str(self.data.open)
@@ -131,12 +133,13 @@ class LogRecord(Structure):
             data = str(self.data.generic)
         return head + data
 
-class LogViewer:
-    """Application for viewing logs.."""
+class MergeLogs:
+    """Application for merging logs.."""
 
-    header = "core,pid,tid,sec,nsec,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7"
+    header = "date,time,core,pid,tid,sec,nsec,daarg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7"
     def __init__(self):
         self._args = None
+        self._opcode_stats = {}
 
     def get_parser(self, parent_parser=False):
         parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter,
@@ -162,7 +165,7 @@ class LogViewer:
     def _banner():
         print()
         f = Figlet(font='slant')
-        print(f.renderText('LogViewer'))
+        print(f.renderText('MergeLogs'))
 
     def trace(self, message):
         if self._args.verbose or self._args.log_level != "OFF":
@@ -186,15 +189,22 @@ class LogViewer:
 
         #print(f"{time_struct}.{buf.nsec}")
 
+    def inc_opcode_stats(self, op):
+        if op in self._opcode_stats:
+            self._opcode_stats[op] += 1
+        else:
+            self._opcode_stats[op] = 1
+
     def merge_files(self, files, output_fd):
         file_fds = {}
+        total_records = 0
         for file in files:
             core = file.replace(self._args.merge, "").replace(".bin", "")
             file_fds[core] = open(file, "rb")
 
         if len(file_fds):
-            print(LogViewer.header, file=output_fd)
-        batch_size = 100000
+            print(MergeLogs.header, file=output_fd)
+        batch_size = 10000
         records = []
         while len(file_fds) != 0:
             completed_cores = []
@@ -203,18 +213,24 @@ class LogViewer:
                 for i in range(0, batch_size):
                     rec = LogRecord()
                     byte_count = fd.readinto(rec)
-                    print(rec)
+                    #print(rec)
                     if byte_count != sizeof(LogRecord):
                         completed_cores.append(core)
                         break
                     else:
+                        self.inc_opcode_stats(rec.opcode)
                         records.append(rec)
+                    total_records += 1
+                    if (total_records % 1000) == 0:
+                        print(f"record_count: {total_records}", end='\r')
             records.sort()
 
             # We can guarantee that at least batch size records are sorted.
             # Output these records.
-            for i in range(0, min(len(records), batch_size)):
-                print(records[i], file=output_fd)
+            flush_count = min(len(records), batch_size)
+            for i in range(0, flush_count):
+                rec_string = ",".join(str(records[i]).split(" "))
+                print(rec_string, file=output_fd)
             del records[0:batch_size]
 
             for core in completed_cores:
@@ -222,7 +238,13 @@ class LogViewer:
 
         # Whatever is left should be printed also
         for rec in records:
-            print(rec)
+            rec_string = ",".join(str(rec).split(" "))
+            print(rec_string, file=output_fd)
+        print(f"record_count: {total_records}")
+        print("opcode counts:")
+        print("===============================")
+        for op, count in self._opcode_stats.items():
+            print(f"{opcode_string[op]:20s}: {count:8d}")
 
     def merge(self, merge_prefix):
         files = glob.glob(merge_prefix + "*.bin")
@@ -235,7 +257,7 @@ class LogViewer:
         
         if not self._parse_args():
             return
-        LogViewer._banner()
+        MergeLogs._banner()
 
         if self._args.merge:
             self.merge(self._args.merge)
@@ -245,5 +267,5 @@ class LogViewer:
 
 if __name__ == "__main__":
     
-    bench = LogViewer()
+    bench = MergeLogs()
     bench.run()
