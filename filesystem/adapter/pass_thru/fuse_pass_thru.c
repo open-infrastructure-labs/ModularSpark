@@ -40,9 +40,8 @@
 
 #include "../../logging/src/lib/logger.h"
 
-#define DISABLE_LOGGER 1
 #ifdef DISABLE_LOGGER
-void logger_init(void){}
+void logger_init(const char *log_path){}
 void logger_record_generic(log_opcode_t op,
                            const char *filename,
                            uint64_t handle,
@@ -60,8 +59,8 @@ void logger_record_rw(log_opcode_t op,
 
 #endif
 
-
 typedef struct fuse_adapter_options_s {
+  int loopback; /* 0-no effect, 1-loopback enabled. */
   const char *path; /* Path to our remote. */
   const char *log_path; /* Path to logs. */
   int help; /* Set if help display is requested. */  
@@ -72,6 +71,7 @@ static fuse_adapter_options_t fuse_adapter_options;
 typedef struct fuse_opt fuse_opt_t;
 
 static fuse_opt_t fuse_adapter_options_spec[] = {
+  {"--loopback", offsetof(fuse_adapter_options_t, loopback), 1 },
   {"--path=%s", offsetof(fuse_adapter_options_t, path), 1 },
   {"--log_path=%s", offsetof(fuse_adapter_options_t, log_path), 1 },
   {"--help", offsetof(fuse_adapter_options_t, help), 1 },
@@ -354,6 +354,11 @@ static int fuse_adapter_open(const char *path, struct fuse_file_info *fi)
 static int fuse_adapter_read(const char *path, char *buf, size_t size, off_t off,
 		                     struct fuse_file_info *fi)
 {
+    logger_record_rw(LOG_OPCODE_READ, 0, path, off, size);
+    if (fuse_adapter_options.loopback) {
+        memset(buf, 0, size);
+        return size;
+    }
     int fd;
 	size_t bytes;
 
@@ -376,17 +381,18 @@ static int fuse_adapter_read(const char *path, char *buf, size_t size, off_t off
     if (path != NULL) {
         close(fd);
     }
-    logger_record_rw(LOG_OPCODE_READ, fd, path, off, size);
 	return bytes;
 }
 
 static int fuse_adapter_write(const char *path, const char *buf, size_t size, off_t off,
 		                      struct fuse_file_info *fi)
 {   
+    logger_record_rw(LOG_OPCODE_WRITE, 0, path, off, size);
+    if (fuse_adapter_options.loopback) {
+        return size;
+    }
     int fd = 0;
 	size_t bytes;
-#if 1
-
     if (path != NULL) {
         char *new_path = alloc_new_path(path);
         fd = open(new_path, O_WRONLY);
@@ -405,11 +411,7 @@ static int fuse_adapter_write(const char *path, const char *buf, size_t size, of
     }
     if (path != NULL) {
         close(fd);
-    }
-#else
-    bytes = size;
-#endif    
-    logger_record_rw(LOG_OPCODE_WRITE, fd, path, off, size);
+    }    
 	return bytes;
 }
 
@@ -612,12 +614,111 @@ static int fuse_adapter_fsyncdir(const char *path,
                           0, 0, 0, 0);
     return 0;
 }
-
+static void fuse_show_cap(struct fuse_conn_info *conn, unsigned int cap)
+{	
+	if (cap & FUSE_CAP_ASYNC_READ) {
+	    printf("\tFUSE_CAP_ASYNC_READ\n");
+    }
+	if (cap & FUSE_CAP_POSIX_LOCKS) {
+		printf("\tFUSE_CAP_POSIX_LOCKS\n");
+    }
+	if (cap & FUSE_CAP_ATOMIC_O_TRUNC) {
+		printf("\tFUSE_CAP_ATOMIC_O_TRUNC\n");
+    }
+	if (cap & FUSE_CAP_EXPORT_SUPPORT) {
+		printf("\tFUSE_CAP_EXPORT_SUPPORT\n");
+    }
+	if (cap & FUSE_CAP_DONT_MASK) {
+		printf("\tFUSE_CAP_DONT_MASK\n");
+    }
+	if (cap & FUSE_CAP_SPLICE_WRITE) {
+		printf("\tFUSE_CAP_SPLICE_WRITE\n");
+    }
+	if (cap & FUSE_CAP_SPLICE_MOVE) {
+		printf("\tFUSE_CAP_SPLICE_MOVE\n");
+    }
+	if (cap & FUSE_CAP_SPLICE_READ) {
+		printf("\tFUSE_CAP_SPLICE_READ\n");
+    }
+	if (cap & FUSE_CAP_SPLICE_WRITE) {
+		printf("\tFUSE_CAP_SPLICE_WRITE\n");
+    }
+	if (cap & FUSE_CAP_FLOCK_LOCKS) {
+		printf("\tFUSE_CAP_FLOCK_LOCKS\n");
+    }
+	if (cap & FUSE_CAP_IOCTL_DIR) {
+		printf("\tFUSE_CAP_IOCTL_DIR\n");
+    }
+	if (cap & FUSE_CAP_AUTO_INVAL_DATA) {
+		printf("\tFUSE_CAP_AUTO_INVAL_DATA\n");
+    }
+	if (cap & FUSE_CAP_READDIRPLUS) {
+		printf("\tFUSE_CAP_READDIRPLUS\n");
+    }
+	if (cap & FUSE_CAP_READDIRPLUS_AUTO) {
+		printf("\tFUSE_CAP_READDIRPLUS_AUTO\n");
+    }
+	if (cap & FUSE_CAP_ASYNC_DIO) {
+		printf("\tFUSE_CAP_ASYNC_DIO\n");
+    }
+	if (cap & FUSE_CAP_WRITEBACK_CACHE) {
+		printf("\tFUSE_CAP_WRITEBACK_CACHE\n");
+    }
+	if (cap & FUSE_CAP_NO_OPEN_SUPPORT) {
+		printf("\tFUSE_CAP_NO_OPEN_SUPPORT\n");
+    }
+	if (cap & FUSE_CAP_PARALLEL_DIROPS) {
+		printf("\tFUSE_CAP_PARALLEL_DIROPS\n");
+    }
+	if (cap & FUSE_CAP_POSIX_ACL) {
+		printf("\tFUSE_CAP_POSIX_ACL\n");
+    }
+	if (cap & FUSE_CAP_HANDLE_KILLPRIV) {
+		printf("\tFUSE_CAP_HANDLE_KILLPRIV\n");
+    }
+	if (cap & FUSE_CAP_NO_OPENDIR_SUPPORT) {
+		printf("\tFUSE_CAP_NO_OPENDIR_SUPPORT\n");
+    }
+	if (cap & FUSE_CAP_EXPLICIT_INVAL_DATA) {
+		printf("\tFUSE_CAP_EXPLICIT_INVAL_DATA\n");
+    }
+}
 static void * fuse_adapter_init(struct fuse_conn_info *conn,
-			                  struct fuse_config *cfg)
+			                    struct fuse_config *cfg)
 {
 	(void) conn;
 	(void) cfg;
+
+    /* Only init logging if the --log_path provided. */
+    if (strlen(fuse_adapter_options.log_path) != 0) {
+        logger_init(fuse_adapter_options.log_path);
+    }
+    
+	printf("Protocol version: %d.%d\n", conn->proto_major,
+	       conn->proto_minor);
+    printf("conn->max_read: 0x%x\n", conn->max_read);
+    printf("conn->max_write: 0x%x\n", conn->max_write);
+    printf("conn->max_readahead: 0x%x\n", conn->max_readahead);
+    printf("conn->max_write: 0x%x\n", conn->max_write);
+
+    printf("conn->capable: 0x%x\n", conn->capable);
+    printf("fuse_conn_info->capable\n");
+    fuse_show_cap(conn, conn->capable);
+
+    printf("conn->want: 0x%x\n", conn->want);
+    printf("fuse_conn_info->want\n");
+    fuse_show_cap(conn, conn->want);
+
+    printf("cfg->kernel_cache: 0x%x\n", cfg->kernel_cache);
+    printf("cfg->direct_io: 0x%x\n", cfg->direct_io);
+    printf("cfg->auto_cache: 0x%x\n", cfg->auto_cache);
+
+    // conn->want &= ~FUSE_CAP_AUTO_INVAL_DATA;
+    //conn->want |= FUSE_CAP_WRITEBACK_CACHE;
+    cfg->direct_io = 1;
+    printf("conn->want: 0x%x\n", conn->want);
+    printf("Capabilities: new want\n");
+    fuse_show_cap(conn, conn->want);
     // cfg->kernel_cache = 1;
     logger_record_generic(LOG_OPCODE_INIT, NULL, 
                           LOG_HANDLE_INVALID,
@@ -809,18 +910,15 @@ int main(int argc, char *argv[])
                        NULL) == -1) {
 		return 1;
     }
-
+    if (fuse_adapter_options.loopback) {
+		printf("Loopback is ENABLED\n");
+	}
 	/* With --help, print our help, followed by standard fuse help. */
 	if (fuse_adapter_options.help) {
 		printf("%s: [--path=device] [--help] [--log_path=path] \n", argv[0]);
 		fuse_opt_add_arg(&args, "--help");
 		args.argv[0][0] = '\0';
 	}
-
-    /* Only init logging if the --log_path provided. */
-    if (strlen(fuse_adapter_options.log_path) != 0) {
-        logger_init(fuse_adapter_options.log_path);
-    }
 
 	ret = fuse_main(args.argc, args.argv, &fuse_adapter_ops, NULL);
     fuse_opt_free_args(&args);
