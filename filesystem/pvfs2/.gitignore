@@ -1,1 +1,3 @@
-build/
+orangefs_fuse/
+orangefs_server/
+

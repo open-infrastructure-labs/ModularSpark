@@ -68,6 +68,9 @@ RUN apt-get -q update &&  \
     apt-get -q install -y automake build-essential bison flex libattr1 libattr1-dev \
                             fuse3 libfuse3-dev git pkg-config
 
+RUN apt-get -q update &&  \
+    apt-get -q install -y  libfuse-dev                           
+
 COPY entry.sh /usr/local/bin/entry.sh
 RUN chmod a+x /usr/local/bin/entry.sh
 
