@@ -133,12 +133,13 @@ class LogRecord(Structure):
             data = str(self.data.generic)
         return head + data
 
-class LogViewer:
-    """Application for viewing logs.."""
+class MergeLogs:
+    """Application for merging logs.."""
 
     header = "date,time,core,pid,tid,sec,nsec,daarg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7"
     def __init__(self):
         self._args = None
+        self._opcode_stats = {}
 
     def get_parser(self, parent_parser=False):
         parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter,
@@ -164,7 +165,7 @@ class LogViewer:
     def _banner():
         print()
         f = Figlet(font='slant')
-        print(f.renderText('LogViewer'))
+        print(f.renderText('MergeLogs'))
 
     def trace(self, message):
         if self._args.verbose or self._args.log_level != "OFF":
@@ -188,6 +189,12 @@ class LogViewer:
 
         #print(f"{time_struct}.{buf.nsec}")
 
+    def inc_opcode_stats(self, op):
+        if op in self._opcode_stats:
+            self._opcode_stats[op] += 1
+        else:
+            self._opcode_stats[op] = 1
+
     def merge_files(self, files, output_fd):
         file_fds = {}
         total_records = 0
@@ -196,8 +203,8 @@ class LogViewer:
             file_fds[core] = open(file, "rb")
 
         if len(file_fds):
-            print(LogViewer.header, file=output_fd)
-        batch_size = 100000
+            print(MergeLogs.header, file=output_fd)
+        batch_size = 10000
         records = []
         while len(file_fds) != 0:
             completed_cores = []
@@ -211,7 +218,11 @@ class LogViewer:
                         completed_cores.append(core)
                         break
                     else:
+                        self.inc_opcode_stats(rec.opcode)
                         records.append(rec)
+                    total_records += 1
+                    if (total_records % 1000) == 0:
+                        print(f"record_count: {total_records}", end='\r')
             records.sort()
 
             # We can guarantee that at least batch size records are sorted.
@@ -220,8 +231,6 @@ class LogViewer:
             for i in range(0, flush_count):
                 rec_string = ",".join(str(records[i]).split(" "))
                 print(rec_string, file=output_fd)
-            total_records += flush_count
-            print(f"record_count: {total_records}", end='\r')
             del records[0:batch_size]
 
             for core in completed_cores:
@@ -231,8 +240,11 @@ class LogViewer:
         for rec in records:
             rec_string = ",".join(str(rec).split(" "))
             print(rec_string, file=output_fd)
-        total_records += len(records)
         print(f"record_count: {total_records}")
+        print("opcode counts:")
+        print("===============================")
+        for op, count in self._opcode_stats.items():
+            print(f"{opcode_string[op]:20s}: {count:8d}")
 
     def merge(self, merge_prefix):
         files = glob.glob(merge_prefix + "*.bin")
@@ -245,7 +257,7 @@ class LogViewer:
         
         if not self._parse_args():
             return
-        LogViewer._banner()
+        MergeLogs._banner()
 
         if self._args.merge:
             self.merge(self._args.merge)
@@ -255,5 +267,5 @@ class LogViewer:
 
 if __name__ == "__main__":
     
-    bench = LogViewer()
+    bench = MergeLogs()
     bench.run()

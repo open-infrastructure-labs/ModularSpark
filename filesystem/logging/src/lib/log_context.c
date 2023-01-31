@@ -59,6 +59,7 @@ bool log_context_allocate_buffer(log_context_t *context)
         context->traces_remaining = LOG_RECORDS_PER_BUFFER;
         context->current_buffer = buffer;
         context->current_record = &context->current_buffer->records[0];
+        debug_trace("[%u] Just allocated next buffer %p\n", context->core_id, context->current_buffer);
         return true;
     } else {
         return false;
@@ -99,6 +100,11 @@ log_record_t * log_context_get_record(log_context_t *context)
         }
         context->traces_remaining--;
         context->current_record++;
+        if (context->traces_remaining == 0) {
+            debug_trace("[%u] Just allocated last trace from buffer %p\n", 
+                        context->core_id,
+                        context->current_buffer);
+        }
         return rec;
     } else {
         return NULL;
@@ -117,6 +123,39 @@ void log_context_open_file(log_context_t *context)
     }
 }
 
+void log_context_start_flush_bg(log_context_t *context)
+{
+    // Assumes that the service lock is held.
+    // By holding service lock and context lock, we ensure that the
+    // thread will run a full loop to process our event.
+
+    log_context_lock(context);
+
+    /* Only flush if the buffer is not empty.
+     * And if we have free buffers.
+     */
+    if (!queue_is_empty(&context->free_buffer_queue) &&
+        (context->current_buffer != NULL) &&
+        (context->traces_remaining != LOG_RECORDS_PER_BUFFER)) {
+        debug_trace("[%u] Enqueue for flush bg.\n", context->core_id);
+        if (context->traces_remaining == 0) {
+            context->current_buffer->valid_bytes = LOG_THREAD_BUFFER_RECORD_BYTES;
+        } else {
+            context->current_buffer->valid_bytes = LOG_THREAD_BUFFER_RECORD_BYTES -
+                                                   (context->traces_remaining * sizeof(log_record_t));
+        }
+        log_header_check_magic(context->current_buffer);
+        queue_insert(&context->flush_buffer_queue, &context->current_buffer->queue_node);
+        context->current_buffer = NULL;
+        log_context_allocate_buffer(context);
+        log_context_unlock(context);
+        log_service_lock();
+        log_thread_signal();
+        log_service_unlock();
+    } else {
+        log_context_unlock(context);
+    }
+}
 void log_context_start_flush(log_context_t *context)
 {
     // Assumes that the service lock is held.
@@ -138,6 +177,7 @@ void log_context_start_flush(log_context_t *context)
         log_header_check_magic(context->current_buffer);
         queue_insert(&context->flush_buffer_queue, &context->current_buffer->queue_node);
         context->current_buffer = NULL;
+        log_context_allocate_buffer(context);
         log_context_unlock(context);
         log_service_lock();
         log_thread_signal();

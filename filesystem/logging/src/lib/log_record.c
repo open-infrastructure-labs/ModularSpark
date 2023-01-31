@@ -83,6 +83,7 @@ void log_finish(log_context_t *context)
         log_header_check_magic(context->current_buffer);
         queue_insert(&context->flush_buffer_queue, &context->current_buffer->queue_node);
         context->current_buffer = NULL;
+        log_context_allocate_buffer(context);
         log_context_unlock(context);
         log_service_lock();
         log_thread_signal();
@@ -131,9 +132,9 @@ void logger_record_generic(log_opcode_t op,
     rec->data.generic.arg1 = arg1;
     rec->data.generic.arg2 = arg2;
     rec->data.generic.arg3 = arg3;
-    debug_trace("[%u] generic remaining: %u data: %u %s %lx %u %u %u %u\n",
-                context->core_id, context->traces_remaining,
-                op, filename, handle, arg0, arg1, arg2, arg3);
+    // debug_trace("[%u] generic remaining: %u data: %u %s %lx %u %u %u %u\n",
+    //             context->core_id, context->traces_remaining,
+    //             op, filename, handle, arg0, arg1, arg2, arg3);
     
     log_finish(context);
 }

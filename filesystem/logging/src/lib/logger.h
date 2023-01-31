@@ -87,5 +87,6 @@ void logger_record_rw(log_opcode_t op,
                       uint64_t offset,
                       uint64_t length);
 void logger_flush(void);
+void logger_flush_background(void);
 bool logger_is_flush_needed(void);
 #endif

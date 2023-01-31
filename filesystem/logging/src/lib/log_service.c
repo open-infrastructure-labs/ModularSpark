@@ -92,6 +92,12 @@ void logger_init(const char *log_path)
         getcwd(log_service_get_log_path(), PATH_MAX);
     }
     printf("Logging path is: %s\n",log_service_get_log_path());
+#if LOG_DEBUG
+    strcpy(&log_service.debug_log_path[0], log_service_get_log_path());
+    strcat(&log_service.debug_log_path[0], "/log_debug_file.log");
+    pthread_mutex_init(&log_service.debug_log_mutex, NULL);
+    log_service.debug_file = fopen(&log_service.debug_log_path[0], "w");
+#endif
 }
 
 // Thread for flushing traces to file in the background.
@@ -130,7 +136,12 @@ static void *log_thread(void *unused)
         log_service_unlock();
         clock_gettime(CLOCK_REALTIME, &ts);
         if ((ts.tv_sec - last_run_ts.tv_sec) >= LOG_FLUSH_WAIT_SEC) {
-            logger_flush();
+            /* If we do a full wait without any wakeup, then check if we need to 
+             * flush the buffers.  In effect, this allows us to flush the buffers
+             * when we go idle.
+             */
+            debug_trace("Flush Timer expired.\n");
+            logger_flush_background();
         }
     }
     printf("log_service exiting\n");
@@ -162,11 +173,18 @@ bool logger_is_flush_needed(void)
     return needed;
 }
 
+// A bg flush will flush out a partially full buffer,
+// as long as it is not the only one remaining.
+void logger_flush_background(void)
+{
+    uint32_t core_id;
+    for (core_id = 0; core_id < log_service.cores; core_id++) {
+        log_context_start_flush_bg(log_get_context(core_id));
+    }
+}
 // Flush out all the buffers that need it.
 void logger_flush(void)
 {
-    debug_trace("[%u] Flush started\n", sched_getcpu());
-
     uint32_t core_id;
     for (core_id = 0; core_id < log_service.cores; core_id++) {
         log_context_start_flush(log_get_context(core_id));
@@ -192,10 +210,15 @@ void debug_trace(const char* format, ...)
 #elif LOG_DEBUG
 void debug_trace(const char* format, ...)
 {
+    if (!log_service_flag_is_set(LOG_SERVICE_FLAGS_INIT)) {
+        return;
+    }
+    pthread_mutex_lock(&log_service.debug_log_mutex);
     va_list argptr;
     va_start(argptr, format);
-    vfprintf(stderr, format, argptr);
+    vfprintf(log_service.debug_file, format, argptr);
     va_end(argptr);
-    fflush(stdin);
+    fflush(log_service.debug_file);
+    pthread_mutex_unlock(&log_service.debug_log_mutex);
 }
 #endif
