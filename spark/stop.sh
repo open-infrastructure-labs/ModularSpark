@@ -9,3 +9,10 @@ if [ ! -z "$DOCKER_NAME" ]
 then
   docker container stop ${DOCKER_NAME}
 fi
+
+WORKER_NAMES=$(docker container ls -q --filter name="${WORKER_CONTAINER_NAME}")
+
+if [ ! -z "${WORKER_NAMES}" ]
+then
+  docker container stop ${WORKER_NAMES}
+fi

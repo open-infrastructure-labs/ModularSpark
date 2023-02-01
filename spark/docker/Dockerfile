@@ -90,6 +90,9 @@ RUN sudo apt-get install -y python3 python3-setuptools python3.8-venv\
 # Install iperf3 for bandwidth testing
 RUN apt-get -q update && apt-get -q install -y --no-install-recommends iperf3
 
+# Install fuse libraries
+RUN apt-get -q update &&  apt-get -q install -y  fuse3 libfuse-dev
+
 # Setup Spark Environment
 ARG SPARK_VERSION=
 ENV SPARK_VERSION ${SPARK_VERSION}
